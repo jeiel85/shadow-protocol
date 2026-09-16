@@ -622,7 +622,7 @@
             <span id="label-agent-name">요원: 팬텀</span>
             <div style="display: flex; gap: 4px;">
               <button id="btn-lang-toggle" class="sound-toggle-btn">🌐 한국어</button>
-              <button id="btn-sound-toggle" class="sound-toggle-btn">SFX: ON</button>
+              <button id="btn-sound-toggle" class="sound-toggle-btn">음향: ON</button>
             </div>
           </div>
           <div>
@@ -645,7 +645,7 @@
         </div>
 
         <div class="hud-card mission-info">
-          <div id="floor-name" class="floor-tag">FLOOR 01</div>
+          <div id="floor-name" class="floor-tag">구역 01 // B2 지하 물류 주차장</div>
           <div id="mission-objective" class="obj-text">목표: 메인프레임 해킹 및 탈출</div>
           <div id="credits-hud" style="font-size: 11px; color: var(--neon-amber); margin-top: 4px;">보유 크레딧: 0 CR</div>
         </div>
@@ -655,7 +655,7 @@
       <div id="comm-box" class="comm-box">
         <div class="comm-portrait">👁️</div>
         <div class="comm-content">
-          <div class="comm-sender">ORACLE // TAC-COM</div>
+          <div class="comm-sender">오라클 // 전술 지휘</div>
           <div id="comm-text">팬텀, 침투 구역에 진입했습니다. 그림자 속을 유지하십시오.</div>
         </div>
       </div>
@@ -705,9 +705,12 @@
     <!-- Modal: Title Screen / Mission Select -->
     <div id="modal-title" class="modal-overlay open">
       <div class="modal-box">
-        <div class="modal-header">
-          <div id="title-modal-title" class="modal-title">SHADOW PROTOCOL // PHANTOM MAINFRAME</div>
-          <div id="title-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">보안 시설 잠입 전술 시스템</div>
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div id="title-modal-title" class="modal-title">SHADOW PROTOCOL // 팬텀 메인프레임</div>
+            <div id="title-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">보안 시설 잠입 전술 시스템</div>
+          </div>
+          <button id="btn-title-lang-toggle" class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px; border-color: var(--neon-cyan); color: var(--neon-cyan); display: flex; align-items: center; gap: 6px; cursor: pointer;">🌐 한국어 / ENG</button>
         </div>
         <div class="modal-body">
           <p id="title-modal-lore" style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
@@ -754,10 +757,10 @@
       <div class="modal-box">
         <div class="modal-header">
           <div id="debrief-modal-title" class="modal-title">미션 정산 // 탈출 성공</div>
-          <div id="debrief-floor-name" style="color: var(--neon-green); font-weight: bold;">FLOOR 01</div>
+          <div id="debrief-floor-name" style="color: var(--neon-green); font-weight: bold;">구역 01 완료</div>
         </div>
         <div class="modal-body">
-          <div id="debrief-rank" class="rank-display rank-S">RANK S</div>
+          <div id="debrief-rank" class="rank-display rank-S">랭크 S</div>
           <table class="stats-table">
             <tr>
               <td id="stat-label-base">기본 작전 완수금</td>
@@ -815,9 +818,12 @@
     <!-- Modal: Pause Menu -->
     <div id="modal-pause" class="modal-overlay">
       <div class="modal-box" style="width: 500px;">
-        <div class="modal-header">
-          <div id="pause-modal-title" class="modal-title">전술 일시정지</div>
-          <div id="pause-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">신경 링크 일시 중단</div>
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div id="pause-modal-title" class="modal-title">전술 일시정지</div>
+            <div id="pause-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">신경 링크 일시 중단</div>
+          </div>
+          <button id="btn-pause-lang-toggle" class="sound-toggle-btn" style="border-color: var(--neon-cyan); color: var(--neon-cyan); cursor: pointer;">🌐 한국어</button>
         </div>
         <div class="modal-body">
           <p id="pause-modal-desc" style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
@@ -863,6 +869,15 @@
        ========================================================================== */
     const I18N = {
       ko: {
+        langBtn: "🌐 언어: 한국어",
+        soundOn: "음향: ON",
+        soundOff: "음향: OFF",
+        senderTacCom: "오라클 // 전술 지휘",
+        senderFacility: "시설 경비 시스템",
+        alarmIntruderAlert: "침입자 경보 발령! 전 구역 수색 및 교전 개시!",
+        rankPrefix: "랭크 ",
+        floorClearedSuffix: " 완료",
+        sleepText: "기절",
         agentName: "요원: 팬텀",
         vitality: "생체 신호 (체력)",
         camoBattery: "광학 위장 배터리",
@@ -881,7 +896,7 @@
         gadgetNames: ["마취총", "폭음탄", "연막탄", "광학 위장"],
         gadgetReady: "준비",
         gadgetActive: "가동 중",
-        titleMain: "SHADOW PROTOCOL // PHANTOM MAINFRAME",
+        titleMain: "SHADOW PROTOCOL // 팬텀 메인프레임",
         titleSub: "보안 시설 잠입 전술 시스템",
         titleLore: `초거대 메가코퍼레이션 <strong>넥서스 다이내믹스(Nexus Dynamics)</strong>가 전 세계 인류를 감시·통제하기 위한 불법 자율 전투 AI <strong>'오리온(ORION)'</strong>을 가동하려 합니다.<br><br>
           전설적인 고스트 에이전트 <strong>팬텀(Phantom)</strong>이 되어, 지하 주차장부터 옥상 헬리패드까지 10개 층을 침투하십시오. 메인프레임의 코어 데이터를 탈취하고 감시망을 무력화하여 무사히 탈출하십시오.`,
@@ -904,6 +919,7 @@
         pauseRetry: "현재 층 재시작",
         pauseExit: "메인 메뉴로 복귀",
         debriefTitle: "미션 정산 // 탈출 성공",
+        debriefShop: "업그레이드",
         debriefNext: "다음 층으로 진입 [ENTER]",
         statBase: "기본 작전 완수금",
         statGhost: "고스트 요원 (완전 불살 보너스)",
@@ -942,6 +958,15 @@
         commAlarmDrone: "긴급 경고: 지원 전투 드론이 요원을 요격하러 출격했습니다!"
       },
       en: {
+        langBtn: "🌐 Lang: English",
+        soundOn: "SFX: ON",
+        soundOff: "SFX: OFF",
+        senderTacCom: "ORACLE // TAC-COM",
+        senderFacility: "FACILITY SECURITY",
+        alarmIntruderAlert: "INTRUDER ALERT! Hostile contact confirmed!",
+        rankPrefix: "RANK ",
+        floorClearedSuffix: " CLEARED",
+        sleepText: "Zzz",
         agentName: "OPERATIVE: PHANTOM",
         vitality: "VITALITY",
         camoBattery: "CAMO BATTERY",
@@ -983,6 +1008,7 @@
         pauseRetry: "RESTART CURRENT FLOOR",
         pauseExit: "ABORT TO MAIN MENU",
         debriefTitle: "MISSION DEBRIEF // EXTRACTION SUCCESS",
+        debriefShop: "UPGRADES",
         debriefNext: "ASCEND TO NEXT FLOOR [ENTER]",
         statBase: "Base Operation Bounty",
         statGhost: "Ghost Operative (Zero Kills / Pure Stealth)",
@@ -1273,7 +1299,13 @@
       load() {
         try {
           const raw = localStorage.getItem(this.key);
-          if (raw) return JSON.parse(raw);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              if (!parsed.lang) parsed.lang = 'ko';
+              return parsed;
+            }
+          }
         } catch(e) {}
         return {
           unlockedFloor: 1,
@@ -1915,7 +1947,14 @@
 
       applyLanguage() {
         const t = (k) => this.t(k);
-        document.getElementById('btn-lang-toggle').innerText = this.lang === 'ko' ? '🌐 한국어' : '🌐 ENGLISH';
+        const langText = t('langBtn');
+        ['btn-lang-toggle', 'btn-title-lang-toggle', 'btn-pause-lang-toggle'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = langText;
+        });
+        const soundEl = document.getElementById('btn-sound-toggle');
+        if (soundEl) soundEl.innerText = this.audio.enabled ? t('soundOn') : t('soundOff');
+
         document.getElementById('label-agent-name').innerText = t('agentName');
         document.getElementById('label-vitality').innerText = t('vitality');
         document.getElementById('label-camo').innerText = t('camoBattery');
@@ -1939,6 +1978,8 @@
         // Debrief Modal
         document.getElementById('debrief-modal-title').innerText = t('debriefTitle');
         document.getElementById('btn-next-mission').innerText = t('debriefNext');
+        const debriefShopBtn = document.getElementById('btn-debrief-shop');
+        if (debriefShopBtn) debriefShopBtn.innerText = t('debriefShop');
         document.getElementById('stat-label-base').innerText = t('statBase');
         document.getElementById('stat-label-ghost').innerText = t('statGhost');
         document.getElementById('stat-label-shadow').innerText = t('statShadow');
@@ -1972,10 +2013,18 @@
           if (el) el.innerText = name;
         });
 
-        // Current Floor Title
+        // Current Floor Title & Objective
         const cfg = LEVEL_CONFIGS[this.currentFloor - 1];
         if (cfg) {
           document.getElementById('floor-name').innerText = this.lang === 'ko' ? cfg.title_ko : cfg.title_en;
+        }
+        const objEl = document.getElementById('mission-objective');
+        if (objEl) {
+          objEl.innerText = (this.exitZone && this.exitZone.active) ? t('objExtract') : t('objDefault');
+        }
+        const commSender = document.querySelector('.comm-sender');
+        if (commSender && (commSender.innerText.includes('ORACLE') || commSender.innerText.includes('오라클'))) {
+          commSender.innerText = t('senderTacCom');
         }
       }
 
@@ -2056,11 +2105,15 @@
       }
 
       bindUI() {
-        document.getElementById('btn-lang-toggle').addEventListener('click', () => this.toggleLanguage());
+        const handleLangToggle = () => this.toggleLanguage();
+        ['btn-lang-toggle', 'btn-title-lang-toggle', 'btn-pause-lang-toggle'].forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) btn.addEventListener('click', handleLangToggle);
+        });
 
         document.getElementById('btn-sound-toggle').addEventListener('click', () => {
           const enabled = this.audio.toggle();
-          document.getElementById('btn-sound-toggle').innerText = `SFX: ${enabled ? 'ON' : 'OFF'}`;
+          document.getElementById('btn-sound-toggle').innerText = enabled ? this.t('soundOn') : this.t('soundOff');
         });
 
         document.getElementById('btn-start-mission').addEventListener('click', () => {
@@ -2322,7 +2375,7 @@
         document.getElementById('floor-name').innerText = this.lang === 'ko' ? config.title_ko : config.title_en;
         document.getElementById('mission-objective').innerText = this.t('objDefault');
         const briefing = this.lang === 'ko' ? config.briefing_ko : config.briefing_en;
-        this.showComm("ORACLE // TAC-COM", briefing, 5000);
+        this.showComm(this.t('senderTacCom'), briefing, 5000);
         this.updateGadgetUI();
         this.updateHUDStats();
       }
@@ -2380,7 +2433,7 @@
         if (this.blackoutTimer > 0) {
           this.blackoutTimer -= dt;
           if (this.blackoutTimer <= 0) {
-            this.showComm("ORACLE // TAC-COM", this.t('commBlackoutEnd'), 3500);
+            this.showComm(this.t('senderTacCom'), this.t('commBlackoutEnd'), 3500);
           }
         }
 
@@ -2391,7 +2444,7 @@
           if (!anyGuardChasing && !anyDroneChasing && this.alarmTimer > 20) {
             this.alarmLevel = 'SUSPICIOUS';
             this.audio.stopSiren();
-            this.showComm("ORACLE // TAC-COM", this.t('commAlertDowngrade'), 3000);
+            this.showComm(this.t('senderTacCom'), this.t('commAlertDowngrade'), 3000);
           }
         } else if (this.alarmLevel === 'SUSPICIOUS') {
           let anyAlert = this.guards.some(g => g.state === 'SUSPICIOUS' && !g.isDead);
@@ -2788,7 +2841,7 @@
               this.blackoutTimer = 25.0;
               this.audio.playSpark();
               this.createSparks(this.breaker.x, this.breaker.y, 25);
-              this.showComm("ORACLE // TAC-COM", this.t('commBreakerHack'), 3500);
+              this.showComm(this.t('senderTacCom'), this.t('commBreakerHack'), 3500);
             }
           }
         }
@@ -2804,7 +2857,7 @@
               this.audio.playHackSuccess();
               this.cameras.forEach(c => c.disabledTimer = 18.0);
               this.doors.forEach(d => d.locked = false);
-              this.showComm("ORACLE // TAC-COM", this.t('commTerminalHack'), 4000);
+              this.showComm(this.t('senderTacCom'), this.t('commTerminalHack'), 4000);
             }
           }
         }
@@ -2828,7 +2881,7 @@
                 p.downloadComplete = true;
                 this.exitZone.active = true;
                 this.audio.playHackSuccess();
-                this.showComm("ORACLE // TAC-COM", this.t('commMainframeDone'), 6000);
+                this.showComm(this.t('senderTacCom'), this.t('commMainframeDone'), 6000);
                 document.getElementById('mission-objective').innerText = this.t('objExtract');
               }
             } else {
@@ -3050,7 +3103,7 @@
           this.alarmTimer = 0;
           this.stats.alarmsRaised++;
           this.audio.startSiren();
-          this.showComm("FACILITY SECURITY", `INTRUDER ALERT! ${reason}`, 4500);
+          this.showComm(this.t('senderFacility'), this.t('alarmIntruderAlert'), 4500);
 
           this.guards.forEach(g => {
             if (!g.isDead && g.state !== 'STUNNED') {
@@ -3080,7 +3133,7 @@
             investigateTarget: { x: this.player.x, y: this.player.y }
           });
           this.createSparks(spawnX, spawnY, 20);
-          this.showComm("ORACLE // TAC-COM", this.t('commAlarmDrone'), 4500);
+          this.showComm(this.t('senderTacCom'), this.t('commAlarmDrone'), 4500);
         }
       }
 
@@ -3102,10 +3155,10 @@
         this.saveManager.completeFloor(this.currentFloor, totalCredits, rank);
 
         const cfg = LEVEL_CONFIGS[this.currentFloor - 1];
-        document.getElementById('debrief-floor-name').innerText = this.lang === 'ko' ? `${cfg.title_ko} 완료` : `${cfg.title_en} CLEARED`;
+        document.getElementById('debrief-floor-name').innerText = this.lang === 'ko' ? `${cfg.title_ko}${this.t('floorClearedSuffix')}` : `${cfg.title_en}${this.t('floorClearedSuffix')}`;
         const rankEl = document.getElementById('debrief-rank');
         rankEl.className = `rank-display rank-${rank}`;
-        rankEl.innerText = `RANK ${rank}`;
+        rankEl.innerText = `${this.t('rankPrefix')}${rank}`;
 
         document.getElementById('stat-base-bounty').innerText = `+${baseBounty} CR`;
         document.getElementById('stat-ghost-bonus').innerText = `+${ghostBonus} CR`;
@@ -3512,7 +3565,7 @@
             ctx.fillRect(-12, -7, 24, 14);
             ctx.fillStyle = '#ffaa00';
             ctx.font = '10px monospace';
-            ctx.fillText('Zzz', -8, -12);
+            ctx.fillText(this.t('sleepText'), -10, -12);
             ctx.restore();
           }
         });
