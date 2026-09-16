@@ -7,7 +7,7 @@
   <style>
     :root {
       --bg-color: #080c10;
-      --panel-bg: rgba(10, 16, 26, 0.92);
+      --panel-bg: rgba(10, 16, 26, 0.94);
       --neon-cyan: #00f3ff;
       --neon-green: #00ff66;
       --neon-amber: #ffaa00;
@@ -15,7 +15,7 @@
       --neon-purple: #bc13fe;
       --text-dim: #5c708a;
       --text-bright: #e6f1ff;
-      --font-mono: 'Consolas', 'Courier New', monospace;
+      --font-mono: 'Consolas', 'Courier New', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', monospace;
     }
 
     * {
@@ -64,7 +64,7 @@
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
       background-size: 100% 4px;
       z-index: 20;
-      opacity: 0.6;
+      opacity: 0.5;
     }
 
     .vignette {
@@ -114,7 +114,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      min-width: 220px;
+      min-width: 240px;
     }
 
     .agent-name {
@@ -124,6 +124,8 @@
       letter-spacing: 1.5px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .bar-container {
@@ -166,9 +168,9 @@
     }
 
     .alert-badge {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       padding: 4px 16px;
       border-radius: 3px;
       transition: all 0.3s;
@@ -210,11 +212,11 @@
     /* Floor & Objectives */
     .mission-info {
       text-align: right;
-      min-width: 220px;
+      min-width: 240px;
     }
 
     .floor-tag {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       color: var(--neon-cyan);
       letter-spacing: 1px;
@@ -244,7 +246,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s, transform 0.3s;
-      max-width: 600px;
+      max-width: 640px;
       z-index: 15;
     }
 
@@ -289,10 +291,11 @@
       font-size: 11px;
       color: #64748b;
       line-height: 1.6;
-      background: rgba(6, 10, 15, 0.7);
-      padding: 6px 12px;
+      background: rgba(6, 10, 15, 0.85);
+      padding: 8px 14px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      pointer-events: auto;
     }
 
     .controls-hint span {
@@ -307,9 +310,9 @@
     }
 
     .gadget-slot {
-      width: 68px;
-      height: 72px;
-      background: rgba(10, 18, 30, 0.85);
+      width: 74px;
+      height: 74px;
+      background: rgba(10, 18, 30, 0.88);
       border: 1px solid rgba(0, 243, 255, 0.25);
       border-radius: 4px;
       display: flex;
@@ -345,7 +348,7 @@
     }
 
     .gadget-name {
-      font-size: 9px;
+      font-size: 10px;
       text-align: center;
       color: #94a3b8;
       white-space: nowrap;
@@ -368,7 +371,7 @@
       bottom: 110px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.9);
       border: 1px solid var(--neon-cyan);
       box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
       padding: 8px 18px;
@@ -586,7 +589,7 @@
     .rank-B { color: var(--neon-green); text-shadow: 0 0 15px rgba(0, 255, 102, 0.5); }
     .rank-C { color: var(--neon-amber); }
 
-    /* Audio Toggle Button in HUD */
+    /* Audio / Lang Toggle Button in HUD */
     .sound-toggle-btn {
       background: none;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -596,6 +599,7 @@
       font-size: 11px;
       cursor: pointer;
       pointer-events: auto;
+      font-family: inherit;
     }
     .sound-toggle-btn:hover {
       border-color: var(--neon-cyan);
@@ -615,17 +619,20 @@
       <div class="hud-top">
         <div class="hud-card agent-status">
           <div class="agent-name">
-            <span>OPERATIVE: PHANTOM</span>
-            <button id="btn-sound-toggle" class="sound-toggle-btn">SFX: ON</button>
+            <span id="label-agent-name">요원: 팬텀</span>
+            <div style="display: flex; gap: 4px;">
+              <button id="btn-lang-toggle" class="sound-toggle-btn">🌐 한국어</button>
+              <button id="btn-sound-toggle" class="sound-toggle-btn">SFX: ON</button>
+            </div>
           </div>
           <div>
-            <div style="font-size: 9px; color: #ff6b8b; margin-bottom: 2px;">VITALITY</div>
+            <div id="label-vitality" style="font-size: 9px; color: #ff6b8b; margin-bottom: 2px;">생체 신호 (체력)</div>
             <div class="bar-container">
               <div id="bar-health" class="bar-fill bar-health"></div>
             </div>
           </div>
           <div>
-            <div style="font-size: 9px; color: #bc13fe; margin-bottom: 2px;">CAMO BATTERY</div>
+            <div id="label-camo" style="font-size: 9px; color: #bc13fe; margin-bottom: 2px;">광학 위장 배터리</div>
             <div class="bar-container">
               <div id="bar-cloak" class="bar-fill bar-cloak"></div>
             </div>
@@ -633,14 +640,14 @@
         </div>
 
         <div class="hud-card alert-meter">
-          <div class="alert-title">FACILITY ALERT LEVEL</div>
-          <div id="alert-badge" class="alert-badge normal">ALL CLEAR</div>
+          <div id="label-alert-title" class="alert-title">시설 경계 레벨</div>
+          <div id="alert-badge" class="alert-badge normal">정상 순찰 // 이상 없음</div>
         </div>
 
         <div class="hud-card mission-info">
-          <div id="floor-name" class="floor-tag">FLOOR 01 // B2 PARKING</div>
-          <div id="mission-objective" class="obj-text">OBJ: Infiltrate Mainframe & Extract</div>
-          <div id="credits-hud" style="font-size: 11px; color: var(--neon-amber); margin-top: 4px;">CREDITS: 0 CR</div>
+          <div id="floor-name" class="floor-tag">FLOOR 01</div>
+          <div id="mission-objective" class="obj-text">목표: 메인프레임 해킹 및 탈출</div>
+          <div id="credits-hud" style="font-size: 11px; color: var(--neon-amber); margin-top: 4px;">보유 크레딧: 0 CR</div>
         </div>
       </div>
 
@@ -649,21 +656,21 @@
         <div class="comm-portrait">👁️</div>
         <div class="comm-content">
           <div class="comm-sender">ORACLE // TAC-COM</div>
-          <div id="comm-text">Phantom, you are inside the perimeter. Stay in the shadows.</div>
+          <div id="comm-text">팬텀, 침투 구역에 진입했습니다. 그림자 속을 유지하십시오.</div>
         </div>
       </div>
 
       <!-- Action Prompt (Floating) -->
       <div id="prompt-action">
-        <kbd id="prompt-key">E</kbd> <span id="prompt-desc">TAKEDOWN</span>
+        <kbd id="prompt-key">E</kbd> <span id="prompt-desc">제압</span>
       </div>
 
       <!-- Bottom Row -->
       <div class="hud-bottom">
-        <div class="controls-hint">
-          <div><span>[WASD]</span> Sneak / Walk (Silent) | <span>[SHIFT]</span> Sprint (Generates Noise)</div>
-          <div><span>[SPACE]</span> Wall Hug & Peek | <span>[E]</span> Takedown | <span>[G]</span> Drag Body</div>
-          <div><span>[H]</span> Hack Terminal/Breaker/Server | <span>[1-4] / [Q]</span> Use Gadget</div>
+        <div class="controls-hint" id="controls-hint-box">
+          <div><span>[WASD]</span> 잠행 / 걷기 (무소음) | <span>[SHIFT]</span> 전력 질주 (소음 발생)</div>
+          <div><span>[SPACE]</span> 벽 밀착 및 엿보기 | <span>[E]</span> 비살상 제압 | <span>[G]</span> 시체 끌기</div>
+          <div><span>[H]</span> 단말기/배전반/서버 해킹 | <span>[1-4] / [Q]</span> 가젯 사용 | <span>[ESC]</span> 일시정지</div>
         </div>
 
         <div class="gadget-bar">
@@ -671,25 +678,25 @@
             <span class="gadget-key">1</span>
             <span id="gadget-count-0" class="gadget-count">2</span>
             <div class="gadget-icon">🎯</div>
-            <div class="gadget-name">Tranq Dart</div>
+            <div id="gadget-label-0" class="gadget-name">마취총</div>
           </div>
           <div class="gadget-slot" data-gadget="1">
             <span class="gadget-key">2</span>
             <span id="gadget-count-1" class="gadget-count">2</span>
             <div class="gadget-icon">🔊</div>
-            <div class="gadget-name">Noisemaker</div>
+            <div id="gadget-label-1" class="gadget-name">폭음탄</div>
           </div>
           <div class="gadget-slot" data-gadget="2">
             <span class="gadget-key">3</span>
             <span id="gadget-count-2" class="gadget-count">2</span>
             <div class="gadget-icon">💨</div>
-            <div class="gadget-name">Smoke Bomb</div>
+            <div id="gadget-label-2" class="gadget-name">연막탄</div>
           </div>
           <div class="gadget-slot" data-gadget="3">
             <span class="gadget-key">4</span>
-            <span id="gadget-count-3" class="gadget-count">READY</span>
+            <span id="gadget-count-3" class="gadget-count">준비</span>
             <div class="gadget-icon">✨</div>
-            <div class="gadget-name">Camo Cloak</div>
+            <div id="gadget-label-3" class="gadget-name">광학 위장</div>
           </div>
         </div>
       </div>
@@ -699,26 +706,26 @@
     <div id="modal-title" class="modal-overlay open">
       <div class="modal-box">
         <div class="modal-header">
-          <div class="modal-title">SHADOW PROTOCOL // PHANTOM MAINFRAME</div>
-          <div style="font-size: 11px; color: var(--neon-cyan);">SECURE INFILTRATION SYSTEM</div>
+          <div id="title-modal-title" class="modal-title">SHADOW PROTOCOL // PHANTOM MAINFRAME</div>
+          <div id="title-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">보안 시설 잠입 전술 시스템</div>
         </div>
         <div class="modal-body">
-          <p style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
-            Megacorporation <strong>NEXUS DYNAMICS</strong> has initiated deployment of 'ORION'—an autonomous rogue AI designed for global surveillance and kinetic subjugation.<br><br>
-            As elite operative <strong>PHANTOM</strong>, you must breach their 10-tier headquarters tower from the subterranean depths to the rooftop helipad. Extract the root encryption cores, disable security grids, and escape undetected.
+          <p id="title-modal-lore" style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
+            초거대 메가코퍼레이션 <strong>넥서스 다이내믹스(Nexus Dynamics)</strong>가 전 세계 인류를 감시·통제하기 위한 불법 자율 전투 AI <strong>'오리온(ORION)'</strong>을 가동하려 합니다.<br><br>
+            전설적인 고스트 에이전트 <strong>팬텀(Phantom)</strong>이 되어, 지하 주차장부터 옥상 헬리패드까지 10개 층을 침투하십시오. 메인프레임의 코어 데이터를 탈취하고 감시망을 무력화하여 무사히 탈출하십시오.
           </p>
 
           <div style="margin-top: 10px;">
-            <div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan); margin-bottom: 8px;">CAMPAIGN SECTOR SELECT:</div>
+            <div id="title-sector-select" style="font-size: 13px; font-weight: bold; color: var(--neon-cyan); margin-bottom: 8px;">작전 침투 구역 선택:</div>
             <div id="level-select-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
               <!-- Dynamically populated -->
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-reset-save" class="btn btn-secondary" style="font-size: 11px;">RESET DATA</button>
-          <button id="btn-open-shop" class="btn btn-secondary">CYBERWARE UPGRADES</button>
-          <button id="btn-start-mission" class="btn">COMMENCE OPERATION [ENTER]</button>
+          <button id="btn-reset-save" class="btn btn-secondary" style="font-size: 11px;">데이터 초기화</button>
+          <button id="btn-open-shop" class="btn btn-secondary">사이버웨어 업그레이드</button>
+          <button id="btn-start-mission" class="btn">작전 개시 [ENTER]</button>
         </div>
       </div>
     </div>
@@ -727,17 +734,17 @@
     <div id="modal-shop" class="modal-overlay">
       <div class="modal-box">
         <div class="modal-header">
-          <div class="modal-title">BLACK-MARKET CYBERWARE CLINIC</div>
-          <div id="shop-credits-display" style="color: var(--neon-amber); font-weight: bold;">CREDITS: 0 CR</div>
+          <div id="shop-modal-title" class="modal-title">암시장 사이버웨어 클리닉</div>
+          <div id="shop-credits-display" style="color: var(--neon-amber); font-weight: bold;">보유 크레딧: 0 CR</div>
         </div>
         <div class="modal-body">
-          <p style="font-size: 12px; color: #94a3b8;">Acquire tactical neural and bio-mechanical augmentations using extracted corporate bounty credits.</p>
+          <p id="shop-modal-sub" style="font-size: 12px; color: #94a3b8;">탈취한 기업 바운티 크레딧으로 신경 및 생체 기계 임플란트를 장착하십시오.</p>
           <div id="shop-upgrade-list" class="upgrade-grid">
             <!-- Dynamically populated -->
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-close-shop" class="btn">CONFIRM & EXIT</button>
+          <button id="btn-close-shop" class="btn">확인 및 닫기</button>
         </div>
       </div>
     </div>
@@ -746,41 +753,41 @@
     <div id="modal-debrief" class="modal-overlay">
       <div class="modal-box">
         <div class="modal-header">
-          <div class="modal-title">MISSION DEBRIEF // EXTRACTION SUCCESS</div>
+          <div id="debrief-modal-title" class="modal-title">미션 정산 // 탈출 성공</div>
           <div id="debrief-floor-name" style="color: var(--neon-green); font-weight: bold;">FLOOR 01</div>
         </div>
         <div class="modal-body">
           <div id="debrief-rank" class="rank-display rank-S">RANK S</div>
           <table class="stats-table">
             <tr>
-              <td>Base Operation Bounty</td>
+              <td id="stat-label-base">기본 작전 완수금</td>
               <td id="stat-base-bounty">+500 CR</td>
             </tr>
             <tr>
-              <td>Ghost Operative (Zero Kills / Pure Stealth)</td>
+              <td id="stat-label-ghost">고스트 요원 (완전 불살 보너스)</td>
               <td id="stat-ghost-bonus">+400 CR</td>
             </tr>
             <tr>
-              <td>Shadow Phantom (Zero Alarms Raised)</td>
+              <td id="stat-label-shadow">섀도우 팬텀 (경보 0회 미발각 보너스)</td>
               <td id="stat-shadow-bonus">+500 CR</td>
             </tr>
             <tr>
-              <td>Takedowns Executed</td>
+              <td id="stat-label-takedowns">제압한 경비병 수</td>
               <td id="stat-takedowns">0</td>
             </tr>
             <tr>
-              <td>Time Elapsed</td>
+              <td id="stat-label-time">작전 소요 시간</td>
               <td id="stat-time">00:45</td>
             </tr>
             <tr style="border-top: 1px solid var(--neon-cyan);">
-              <td style="color: var(--neon-amber);">Total Credits Earned</td>
+              <td id="stat-label-total" style="color: var(--neon-amber);">총 획득 크레딧</td>
               <td id="stat-total-credits" style="color: var(--neon-amber); font-size: 16px;">+1,400 CR</td>
             </tr>
           </table>
         </div>
         <div class="modal-footer">
-          <button id="btn-debrief-shop" class="btn btn-secondary">UPGRADES</button>
-          <button id="btn-next-mission" class="btn">ASCEND TO NEXT FLOOR [ENTER]</button>
+          <button id="btn-debrief-shop" class="btn btn-secondary">업그레이드</button>
+          <button id="btn-next-mission" class="btn">다음 층으로 진입 [ENTER]</button>
         </div>
       </div>
     </div>
@@ -789,18 +796,18 @@
     <div id="modal-gameover" class="modal-overlay">
       <div class="modal-box" style="border-color: var(--neon-red);">
         <div class="modal-header" style="background: rgba(255, 42, 85, 0.15); border-bottom-color: var(--neon-red);">
-          <div class="modal-title" style="color: var(--neon-red);">SIGNAL TERMINATED // AGENT COMPROMISED</div>
+          <div id="gameover-modal-title" class="modal-title" style="color: var(--neon-red);">신호 두절 // 요원 제압됨</div>
         </div>
         <div class="modal-body">
-          <p style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">
-            Corporate security overwhelmed your bio-signatures. The Orion AI core remains locked behind corporate firewalls.
+          <p id="gameover-modal-desc" style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">
+            기업 보안군에 의해 생체 신호가 무력화되었습니다. 오리온 AI 코어는 여전히 방화벽 뒤에 잠겨 있습니다.
           </p>
-          <div style="font-size: 12px; color: #a0aec0; margin-top: 10px;">
-            Tip: Use <strong>[WASD]</strong> to sneak silently, throw <strong>Noisemakers [2]</strong> to redirect patrols, or overload the <strong>Power Breakers [H]</strong> to initiate a 25-second blackout.
+          <div id="gameover-modal-tip" style="font-size: 12px; color: #a0aec0; margin-top: 10px;">
+            팁: <strong>[WASD]</strong>로 소리 없이 잠행하거나, <strong>[2]</strong> 폭음탄으로 시선을 돌리고, <strong>[H]</strong> 배전반을 쇼트시켜 25초간 암전을 유도하십시오.
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-retry-mission" class="btn btn-danger">REBOOT SIMULATION [ENTER]</button>
+          <button id="btn-retry-mission" class="btn btn-danger">시뮬레이션 재부팅 [ENTER]</button>
         </div>
       </div>
     </div>
@@ -809,17 +816,17 @@
     <div id="modal-pause" class="modal-overlay">
       <div class="modal-box" style="width: 500px;">
         <div class="modal-header">
-          <div class="modal-title">TACTICAL PAUSE</div>
-          <div style="font-size: 11px; color: var(--neon-cyan);">LINK SUSPENDED</div>
+          <div id="pause-modal-title" class="modal-title">전술 일시정지</div>
+          <div id="pause-modal-sub" style="font-size: 11px; color: var(--neon-cyan);">신경 링크 일시 중단</div>
         </div>
         <div class="modal-body">
-          <p style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
-            Operation is temporarily held. Assess current sector conditions before resuming infiltration.
+          <p id="pause-modal-desc" style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
+            작전이 일시 대기 중입니다. 주변 보안 상황을 점검한 후 재개하십시오.
           </p>
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-            <button id="btn-pause-resume" class="btn">RESUME INFILTRATION [ESC]</button>
-            <button id="btn-pause-retry" class="btn btn-secondary">RESTART CURRENT FLOOR</button>
-            <button id="btn-pause-exit" class="btn btn-danger">ABORT TO MAIN MENU</button>
+            <button id="btn-pause-resume" class="btn">작전 재개 [ESC]</button>
+            <button id="btn-pause-retry" class="btn btn-secondary">현재 층 재시작</button>
+            <button id="btn-pause-exit" class="btn btn-danger">메인 메뉴로 복귀</button>
           </div>
         </div>
       </div>
@@ -829,22 +836,22 @@
     <div id="modal-victory" class="modal-overlay">
       <div class="modal-box" style="border-color: #ffd700; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);">
         <div class="modal-header" style="background: rgba(255, 215, 0, 0.1); border-bottom-color: #ffd700;">
-          <div class="modal-title" style="color: #ffd700;">OPERATION COMPLETE // ORION AI NEUTRALIZED</div>
+          <div id="victory-modal-title" class="modal-title" style="color: #ffd700;">작전 완료 // 오리온 AI 영구 무력화</div>
         </div>
         <div class="modal-body">
-          <div style="font-size: 14px; color: #fff; line-height: 1.8; text-align: center;">
+          <div id="victory-modal-desc" style="font-size: 14px; color: #fff; line-height: 1.8; text-align: center;">
             <div style="font-size: 42px; margin-bottom: 10px;">🚁✨🏆</div>
-            The VTOL gunship banks sharply away from the Nexus Tower apex.<br>
-            With the Orion root encryption core secured in your drive, the syndicate's global panopticon is permanently dismantled.<br>
-            <strong>Agent Phantom, you are a true ghost.</strong>
+            VTOL 건쉽이 넥서스 타워 옥상 상공으로 급상승합니다.<br>
+            오리온의 루트 암호 코어를 성공적으로 탈취함으로써, 카르텔의 전 지구적 감시망이 영구 해체되었습니다.<br>
+            <strong>팬텀 요원, 당신은 진정한 그림자입니다.</strong>
           </div>
           <div style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 4px; border: 1px solid rgba(255,215,0,0.3); text-align: center;">
-            <div style="font-size: 12px; color: #ffd700; font-weight: bold; margin-bottom: 5px;">MISSION MASTER RATING</div>
-            <div id="victory-stats" style="font-size: 14px; color: #e2e8f0;">All 10 Sectors Successfully Cleared</div>
+            <div id="victory-rating-label" style="font-size: 12px; color: #ffd700; font-weight: bold; margin-bottom: 5px;">종합 요원 마스터 레이팅</div>
+            <div id="victory-stats" style="font-size: 14px; color: #e2e8f0;">10개 구역 침투 완료</div>
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-victory-main" class="btn" style="border-color: #ffd700; color: #ffd700;">RETURN TO SECTOR SELECTION</button>
+          <button id="btn-victory-main" class="btn" style="border-color: #ffd700; color: #ffd700;">구역 선택 화면으로 복귀</button>
         </div>
       </div>
     </div>
@@ -852,7 +859,171 @@
 
   <script>
     /* ==========================================================================
-       1. WEB AUDIO API SYNTHESIZER (ZERO EXTERNAL ASSETS)
+       1. MULTI-LANGUAGE (i18n) DICTIONARY
+       ========================================================================== */
+    const I18N = {
+      ko: {
+        agentName: "요원: 팬텀",
+        vitality: "생체 신호 (체력)",
+        camoBattery: "광학 위장 배터리",
+        facilityAlert: "시설 경계 레벨",
+        alertClear: "정상 순찰 // 이상 없음",
+        alertSuspicious: "의심 경계 // 수색 중",
+        alertAlarm: "전 구역 비상 // 교전 발령",
+        creditsLabel: "보유 크레딧: ",
+        objDefault: "목표: 메인프레임 해킹 및 탈출",
+        objExtract: "목표: 비상 탈출 지점(LZ)으로 이동!",
+        controlsHtml: `
+          <div><span>[WASD]</span> 잠행 / 걷기 (무소음) | <span>[SHIFT]</span> 전력 질주 (소음 발생)</div>
+          <div><span>[SPACE]</span> 벽 밀착 및 엿보기 | <span>[E]</span> 비살상 제압 | <span>[G]</span> 시체 끌기</div>
+          <div><span>[H]</span> 단말기/배전반/서버 해킹 | <span>[1-4] / [Q]</span> 가젯 사용 | <span>[ESC]</span> 일시정지</div>
+        `,
+        gadgetNames: ["마취총", "폭음탄", "연막탄", "광학 위장"],
+        gadgetReady: "준비",
+        gadgetActive: "가동 중",
+        titleMain: "SHADOW PROTOCOL // PHANTOM MAINFRAME",
+        titleSub: "보안 시설 잠입 전술 시스템",
+        titleLore: `초거대 메가코퍼레이션 <strong>넥서스 다이내믹스(Nexus Dynamics)</strong>가 전 세계 인류를 감시·통제하기 위한 불법 자율 전투 AI <strong>'오리온(ORION)'</strong>을 가동하려 합니다.<br><br>
+          전설적인 고스트 에이전트 <strong>팬텀(Phantom)</strong>이 되어, 지하 주차장부터 옥상 헬리패드까지 10개 층을 침투하십시오. 메인프레임의 코어 데이터를 탈취하고 감시망을 무력화하여 무사히 탈출하십시오.`,
+        titleSector: "작전 침투 구역 선택:",
+        btnReset: "데이터 초기화",
+        btnUpgrades: "사이버웨어 업그레이드",
+        btnStart: "작전 개시 [ENTER]",
+        resetConfirm: "모든 침투 기록과 크레딧을 초기화하시겠습니까?",
+        shopTitle: "암시장 사이버웨어 클리닉",
+        shopSub: "탈취한 기업 바운티 크레딧으로 신경 및 생체 기계 임플란트를 장착하십시오.",
+        shopInstall: "장착하기",
+        shopInstalled: "장착 완료",
+        shopOnline: "가동 중",
+        shopClose: "확인 및 닫기",
+        shopNotEnough: "기업 크레딧이 부족합니다.",
+        pauseTitle: "전술 일시정지",
+        pauseSub: "신경 링크 일시 중단",
+        pauseDesc: "작전이 일시 대기 중입니다. 주변 보안 상황을 점검한 후 재개하십시오.",
+        pauseResume: "작전 재개 [ESC]",
+        pauseRetry: "현재 층 재시작",
+        pauseExit: "메인 메뉴로 복귀",
+        debriefTitle: "미션 정산 // 탈출 성공",
+        debriefNext: "다음 층으로 진입 [ENTER]",
+        statBase: "기본 작전 완수금",
+        statGhost: "고스트 요원 (완전 불살 보너스)",
+        statShadow: "섀도우 팬텀 (경보 0회 미발각 보너스)",
+        statTakedowns: "제압한 경비병 수",
+        statTime: "작전 소요 시간",
+        statTotal: "총 획득 크레딧",
+        gameoverTitle: "신호 두절 // 요원 제압됨",
+        gameoverDesc: "기업 보안군에 의해 생체 신호가 무력화되었습니다. 오리온 AI 코어는 여전히 방화벽 뒤에 잠겨 있습니다.",
+        gameoverTip: "팁: <strong>[WASD]</strong>로 소리 없이 잠행하거나, <strong>[2]</strong> 폭음탄으로 시선을 돌리고, <strong>[H]</strong> 배전반을 쇼트시켜 25초간 암전을 유도하십시오.",
+        gameoverRetry: "시뮬레이션 재부팅 [ENTER]",
+        victoryTitle: "작전 완료 // 오리온 AI 영구 무력화",
+        victoryDesc: `<div style="font-size: 42px; margin-bottom: 10px;">🚁✨🏆</div>
+          VTOL 건쉽이 넥서스 타워 옥상 상공으로 급상승합니다.<br>
+          오리온의 루트 암호 코어를 성공적으로 탈취함으로써, 카르텔의 전 지구적 감시망이 영구 해체되었습니다.<br>
+          <strong>팬텀 요원, 당신은 진정한 그림자입니다.</strong>`,
+        victoryRating: "종합 요원 마스터 레이팅",
+        victoryReturn: "구역 선택 화면으로 복귀",
+        promptTakedown: "비살상 초크홀드 제압",
+        promptDrag: "시체 끌기 및 은닉",
+        promptDrop: "시체 내려놓기",
+        promptDoorOpen: "문 열기",
+        promptDoorClose: "문 닫기",
+        promptDoorLocked: "문 잠김 (보안 단말기 필요)",
+        promptBreaker: "배전반 과부하 (암전 유도)",
+        promptTerminal: "보안망 해킹 (CCTV 루프 & 도어 개방)",
+        promptDownload: "메인프레임 코어 데이터 다운로드",
+        lzExtract: "탈출 지점: 열림",
+        lzLocked: "탈출 지점: 잠김",
+        commIntro: "팬텀, 침투 구역에 진입했습니다. 그림자 속을 유지하십시오.",
+        commBlackoutEnd: "시설 전력망이 복구되었습니다! 코너를 주의하십시오.",
+        commAlertDowngrade: "보안군이 시야를 잃었습니다. 경계 단계가 의심으로 하향되었습니다.",
+        commBreakerHack: "전력망 과부하! 25초간 구역 암전이 시작됩니다.",
+        commTerminalHack: "방화벽 침투 완료! 감시 카메라 루프 및 전자 도어가 개방되었습니다.",
+        commMainframeDone: "오리온 메인 암호 코어 탈취 성공! 탈출 지점(LZ)이 활성화되었습니다!",
+        commAlarmDrone: "긴급 경고: 지원 전투 드론이 요원을 요격하러 출격했습니다!"
+      },
+      en: {
+        agentName: "OPERATIVE: PHANTOM",
+        vitality: "VITALITY",
+        camoBattery: "CAMO BATTERY",
+        facilityAlert: "FACILITY ALERT LEVEL",
+        alertClear: "ALL CLEAR // NORMAL",
+        alertSuspicious: "SUSPICIOUS // INVESTIGATING",
+        alertAlarm: "RED ALERT // COMBAT",
+        creditsLabel: "CREDITS: ",
+        objDefault: "OBJ: Access Mainframe & Extract",
+        objExtract: "OBJ: GET TO THE EXTRACTION ZONE!",
+        controlsHtml: `
+          <div><span>[WASD]</span> Sneak / Walk (Silent) | <span>[SHIFT]</span> Sprint (Generates Noise)</div>
+          <div><span>[SPACE]</span> Wall Hug & Peek | <span>[E]</span> Takedown | <span>[G]</span> Drag Body</div>
+          <div><span>[H]</span> Hack Terminal/Breaker/Server | <span>[1-4] / [Q]</span> Use Gadget | <span>[ESC]</span> Pause</div>
+        `,
+        gadgetNames: ["Tranq Dart", "Noisemaker", "Smoke Bomb", "Camo Cloak"],
+        gadgetReady: "READY",
+        gadgetActive: "ACTIVE",
+        titleMain: "SHADOW PROTOCOL // PHANTOM MAINFRAME",
+        titleSub: "SECURE INFILTRATION SYSTEM",
+        titleLore: `Megacorporation <strong>NEXUS DYNAMICS</strong> has initiated deployment of 'ORION'—an autonomous rogue AI designed for global surveillance and kinetic subjugation.<br><br>
+          As elite operative <strong>PHANTOM</strong>, you must breach their 10-tier headquarters tower from the subterranean depths to the rooftop helipad. Extract the root encryption cores, disable security grids, and escape undetected.`,
+        titleSector: "CAMPAIGN SECTOR SELECT:",
+        btnReset: "RESET DATA",
+        btnUpgrades: "CYBERWARE UPGRADES",
+        btnStart: "COMMENCE OPERATION [ENTER]",
+        resetConfirm: "Reset all operational progress and credits?",
+        shopTitle: "BLACK-MARKET CYBERWARE CLINIC",
+        shopSub: "Acquire tactical neural and bio-mechanical augmentations using extracted corporate bounty credits.",
+        shopInstall: "INSTALL",
+        shopInstalled: "INSTALLED",
+        shopOnline: "ONLINE",
+        shopClose: "CONFIRM & EXIT",
+        shopNotEnough: "Insufficient corporate credits.",
+        pauseTitle: "TACTICAL PAUSE",
+        pauseSub: "LINK SUSPENDED",
+        pauseDesc: "Operation is temporarily held. Assess current sector conditions before resuming infiltration.",
+        pauseResume: "RESUME INFILTRATION [ESC]",
+        pauseRetry: "RESTART CURRENT FLOOR",
+        pauseExit: "ABORT TO MAIN MENU",
+        debriefTitle: "MISSION DEBRIEF // EXTRACTION SUCCESS",
+        debriefNext: "ASCEND TO NEXT FLOOR [ENTER]",
+        statBase: "Base Operation Bounty",
+        statGhost: "Ghost Operative (Zero Kills / Pure Stealth)",
+        statShadow: "Shadow Phantom (Zero Alarms Raised)",
+        statTakedowns: "Takedowns Executed",
+        statTime: "Time Elapsed",
+        statTotal: "Total Credits Earned",
+        gameoverTitle: "SIGNAL TERMINATED // AGENT COMPROMISED",
+        gameoverDesc: "Corporate security overwhelmed your bio-signatures. The Orion AI core remains locked behind corporate firewalls.",
+        gameoverTip: "Tip: Use <strong>[WASD]</strong> to sneak silently, throw <strong>[2]</strong> Noisemakers to redirect patrols, or overload <strong>[H]</strong> Breakers for a blackout.",
+        gameoverRetry: "REBOOT SIMULATION [ENTER]",
+        victoryTitle: "OPERATION COMPLETE // ORION AI NEUTRALIZED",
+        victoryDesc: `<div style="font-size: 42px; margin-bottom: 10px;">🚁✨🏆</div>
+          The VTOL gunship banks sharply away from the Nexus Tower apex.<br>
+          With the Orion root encryption core secured in your drive, the syndicate's global panopticon is permanently dismantled.<br>
+          <strong>Agent Phantom, you are a true ghost.</strong>`,
+        victoryRating: "MISSION MASTER RATING",
+        victoryReturn: "RETURN TO SECTOR SELECTION",
+        promptTakedown: "SILENT CHOKE TAKEDOWN",
+        promptDrag: "DRAG & CONCEAL BODY",
+        promptDrop: "DROP BODY",
+        promptDoorOpen: "OPEN DOOR",
+        promptDoorClose: "CLOSE DOOR",
+        promptDoorLocked: "DOOR LOCKED (TERMINAL REQ.)",
+        promptBreaker: "OVERLOAD BREAKER (BLACKOUT)",
+        promptTerminal: "HACK SECURITY GRID (LOOP CAMERAS & UNLOCK DOORS)",
+        promptDownload: "DOWNLOAD MAINFRAME DATA",
+        lzExtract: "LZ: EXTRACT",
+        lzLocked: "LZ: LOCKED",
+        commIntro: "Phantom, you are inside the perimeter. Stay in the shadows.",
+        commBlackoutEnd: "Facility power grid restored! Watch your corners.",
+        commAlertDowngrade: "Security lost visual. Alert downgraded to Suspicious.",
+        commBreakerHack: "Grid overloaded! 25 seconds blackout initiated.",
+        commTerminalHack: "Firewalls breached! Cameras looping and security doors unlocked.",
+        commMainframeDone: "MAIN ENCRYPTION CORE ACQUIRED! EXTRACTION LZ IS ACTIVE!",
+        commAlarmDrone: "CRITICAL WARNING: Combat Drone scrambled to eliminate you!"
+      }
+    };
+
+    /* ==========================================================================
+       2. WEB AUDIO API SYNTHESIZER (ZERO EXTERNAL ASSETS)
        ========================================================================== */
     class SoundEngine {
       constructor() {
@@ -928,7 +1099,6 @@
 
       playDart() {
         if (!this.enabled || !this.ctx) return;
-        // White noise puff
         const bufferSize = this.ctx.sampleRate * 0.08;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -978,7 +1148,7 @@
 
       playHackSuccess() {
         if (!this.enabled || !this.ctx) return;
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+        const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, i) => {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
@@ -1052,7 +1222,6 @@
         this.sirenOsc.type = 'sawtooth';
         this.sirenOsc.frequency.setValueAtTime(650, this.ctx.currentTime);
         
-        // LFO for wailing siren
         const lfo = this.ctx.createOscillator();
         const lfoGain = this.ctx.createGain();
         lfo.frequency.value = 1.5;
@@ -1084,45 +1253,15 @@
     }
 
     /* ==========================================================================
-       2. PERSISTENCE & UPGRADE SHOP SYSTEM (LOCALSTORAGE)
+       3. UPGRADE DEFINITIONS & SAVE MANAGER
        ========================================================================== */
     const UPGRADES_DEF = [
-      {
-        id: 'speed_legs',
-        name: 'Cyber-Sprint Legs',
-        cost: 800,
-        desc: 'Increases tactical sneak and sprint velocities by +25%.'
-      },
-      {
-        id: 'silent_soles',
-        name: 'Silent Padded Soles',
-        cost: 1000,
-        desc: 'Reduces sprint noise wave propagation radius by 55%.'
-      },
-      {
-        id: 'thermal_vision',
-        name: 'Thermal Ocular Implant',
-        cost: 1200,
-        desc: 'Renders silhouettes and vision arcs of all guards through walls.'
-      },
-      {
-        id: 'neural_clock',
-        name: 'Neural Overclock',
-        cost: 1100,
-        desc: 'Reduces mainframe and terminal hacking time by 40% (5s -> 3s).'
-      },
-      {
-        id: 'cloak_battery',
-        name: 'Nano Cloak Capacitor',
-        cost: 1400,
-        desc: 'Extends Optical Camo duration from 5 seconds to 9 seconds.'
-      },
-      {
-        id: 'ammo_pouch',
-        name: 'Expanded Dart Holster',
-        cost: 900,
-        desc: 'Increases starting Tranq Darts from 2 to 4 each mission.'
-      }
+      { id: 'speed_legs', cost: 800 },
+      { id: 'silent_soles', cost: 1000 },
+      { id: 'thermal_vision', cost: 1200 },
+      { id: 'neural_clock', cost: 1100 },
+      { id: 'cloak_battery', cost: 1400 },
+      { id: 'ammo_pouch', cost: 900 }
     ];
 
     class SaveManager {
@@ -1141,7 +1280,7 @@
           credits: 500,
           upgrades: {},
           ranks: {},
-          totalUndetected: 0
+          lang: 'ko'
         };
       }
 
@@ -1176,19 +1315,20 @@
       }
 
       reset() {
+        const lang = this.data.lang || 'ko';
         this.data = {
           unlockedFloor: 1,
           credits: 500,
           upgrades: {},
           ranks: {},
-          totalUndetected: 0
+          lang: lang
         };
         this.save();
       }
     }
 
     /* ==========================================================================
-       3. RAYCASTING VISIBILITY & GEOMETRY UTILITIES
+       4. GEOMETRY UTILITIES
        ========================================================================== */
     function lineIntersection(p1, p2, p3, p4) {
       const denom = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
@@ -1218,13 +1358,15 @@
     }
 
     /* ==========================================================================
-       4. 10 INFILTRATION CAMPAIGN LEVELS DEFINITION
+       5. 10 INFILTRATION CAMPAIGN LEVELS CONFIG
        ========================================================================== */
     const LEVEL_CONFIGS = [
       {
         floor: 1,
-        title: "FLOOR 01 // B2 SUBTERRANEAN PARKING",
-        briefing: "Phantom, security is sparse in the logistics bays. Keep low, observe patrol timing, and breach the B2 local node.",
+        title_ko: "구역 01 // B2 지하 물류 주차장",
+        briefing_ko: "팬텀, 주차장 구역은 경비가 헐겁습니다. 순찰 타이밍을 읽고 로컬 노드를 해킹하십시오.",
+        title_en: "FLOOR 01 // B2 SUBTERRANEAN PARKING",
+        briefing_en: "Phantom, security is sparse in the logistics bays. Keep low, observe patrol timing, and breach the B2 local node.",
         mapW: 1400, mapH: 1000,
         playerStart: { x: 120, y: 500 },
         exitZone: { x: 1280, y: 500, w: 70, h: 80 },
@@ -1232,12 +1374,10 @@
         breaker: { x: 500, y: 880 },
         terminal: { x: 750, y: 700 },
         walls: [
-          // Outer perimeter
           { x: 40, y: 40, w: 1320, h: 20 },
           { x: 40, y: 940, w: 1320, h: 20 },
           { x: 40, y: 40, w: 20, h: 920 },
           { x: 1340, y: 40, w: 20, h: 920 },
-          // Interior pillars & partitions
           { x: 320, y: 150, w: 30, h: 300 },
           { x: 320, y: 550, w: 30, h: 300 },
           { x: 680, y: 200, w: 30, h: 320 },
@@ -1245,9 +1385,7 @@
           { x: 920, y: 120, w: 30, h: 360 },
           { x: 1100, y: 400, w: 30, h: 380 }
         ],
-        doors: [
-          { x: 680, y: 520, w: 30, h: 80, open: false, locked: false }
-        ],
+        doors: [{ x: 680, y: 520, w: 30, h: 80, open: false, locked: false }],
         vents: [
           { x: 260, y: 100, w: 160, h: 30, id: 'v1' },
           { x: 420, y: 100, w: 30, h: 220, id: 'v2' }
@@ -1258,26 +1396,18 @@
           { x: 1020, y: 650, w: 180, h: 120 }
         ],
         guards: [
-          {
-            x: 480, y: 350,
-            waypoints: [{ x: 480, y: 220 }, { x: 480, y: 500 }],
-            fov: 75, range: 200, type: 'guard'
-          },
-          {
-            x: 880, y: 680,
-            waypoints: [{ x: 780, y: 680 }, { x: 1050, y: 680 }],
-            fov: 75, range: 210, type: 'guard'
-          }
+          { x: 480, y: 350, waypoints: [{ x: 480, y: 220 }, { x: 480, y: 500 }], fov: 75, range: 200, type: 'guard' },
+          { x: 880, y: 680, waypoints: [{ x: 780, y: 680 }, { x: 1050, y: 680 }], fov: 75, range: 210, type: 'guard' }
         ],
-        cameras: [
-          { x: 680, y: 70, baseAngle: 90, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 240 }
-        ],
+        cameras: [{ x: 680, y: 70, baseAngle: 90, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 240 }],
         drones: []
       },
       {
         floor: 2,
-        title: "FLOOR 02 // B1 LOGISTICS & VENTILATION",
-        briefing: "CCTV grid is active. Infiltrate via the maintenance air ducts or trigger a blackout via the breaker.",
+        title_ko: "구역 02 // B1 화물 보관소 & 환풍구",
+        briefing_ko: "CCTV 감시망이 가동되었습니다. 환풍구 통로를 이용하거나 배전반을 쇼트시켜 암전을 만드십시오.",
+        title_en: "FLOOR 02 // B1 LOGISTICS & VENTILATION",
+        briefing_en: "CCTV grid is active. Infiltrate via the maintenance air ducts or trigger a blackout via the breaker.",
         mapW: 1600, mapH: 1100,
         playerStart: { x: 100, y: 920 },
         exitZone: { x: 1480, y: 180, w: 80, h: 80 },
@@ -1289,7 +1419,6 @@
           { x: 40, y: 1040, w: 1520, h: 20 },
           { x: 40, y: 40, w: 20, h: 1020 },
           { x: 1540, y: 40, w: 20, h: 1020 },
-          // Rooms
           { x: 250, y: 100, w: 20, h: 450 },
           { x: 250, y: 550, w: 320, h: 20 },
           { x: 550, y: 250, w: 20, h: 320 },
@@ -1311,21 +1440,9 @@
           { x: 820, y: 250, w: 250, h: 180 }
         ],
         guards: [
-          {
-            x: 420, y: 750,
-            waypoints: [{ x: 350, y: 750 }, { x: 620, y: 750 }],
-            fov: 75, range: 210, type: 'guard'
-          },
-          {
-            x: 950, y: 450,
-            waypoints: [{ x: 950, y: 300 }, { x: 950, y: 620 }],
-            fov: 80, range: 220, type: 'guard'
-          },
-          {
-            x: 1300, y: 600,
-            waypoints: [{ x: 1220, y: 600 }, { x: 1460, y: 600 }],
-            fov: 80, range: 220, type: 'guard'
-          }
+          { x: 420, y: 750, waypoints: [{ x: 350, y: 750 }, { x: 620, y: 750 }], fov: 75, range: 210, type: 'guard' },
+          { x: 950, y: 450, waypoints: [{ x: 950, y: 300 }, { x: 950, y: 620 }], fov: 80, range: 220, type: 'guard' },
+          { x: 1300, y: 600, waypoints: [{ x: 1220, y: 600 }, { x: 1460, y: 600 }], fov: 80, range: 220, type: 'guard' }
         ],
         cameras: [
           { x: 750, y: 150, baseAngle: 90, sweepRange: 50, sweepSpeed: 0.9, fov: 60, range: 250 },
@@ -1335,8 +1452,10 @@
       },
       {
         floor: 3,
-        title: "FLOOR 03 // 01F SECURITY SCREENING DESK",
-        briefing: "First floor lobby. Multi-angle cameras cover the security turnstiles. Disable them at the sub-terminal.",
+        title_ko: "구역 03 // 01F 로비 보안 검색대",
+        briefing_ko: "다각도 카메라가 검색대를 비추고 있습니다. 서브 단말기에 접속해 무력화하십시오.",
+        title_en: "FLOOR 03 // 01F SECURITY SCREENING DESK",
+        briefing_en: "First floor lobby. Multi-angle cameras cover the security turnstiles. Disable them at the sub-terminal.",
         mapW: 1600, mapH: 1200,
         playerStart: { x: 100, y: 600 },
         exitZone: { x: 1480, y: 600, w: 80, h: 90 },
@@ -1348,7 +1467,6 @@
           { x: 40, y: 1140, w: 1520, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1540, y: 40, w: 20, h: 1120 },
-          // Central lobby barriers
           { x: 400, y: 200, w: 20, h: 800 },
           { x: 650, y: 350, w: 300, h: 20 },
           { x: 650, y: 750, w: 300, h: 20 },
@@ -1380,8 +1498,10 @@
       },
       {
         floor: 4,
-        title: "FLOOR 04 // 03F CORPORATE CUBICLES",
-        briefing: "A labyrinth of office partitions. Sound echoes easily here. Use noisemaker decoys to divert roving guards.",
+        title_ko: "구역 04 // 03F 오피스 큐비클 미로",
+        briefing_ko: "복잡한 파티션 구조입니다. 발소리가 울리니 폭음 유인탄을 던져 경비병을 유인하십시오.",
+        title_en: "FLOOR 04 // 03F CORPORATE CUBICLES",
+        briefing_en: "A labyrinth of office partitions. Sound echoes easily here. Use noisemaker decoys to divert roving guards.",
         mapW: 1600, mapH: 1200,
         playerStart: { x: 120, y: 100 },
         exitZone: { x: 1450, y: 1050, w: 80, h: 80 },
@@ -1393,7 +1513,6 @@
           { x: 40, y: 1140, w: 1520, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1540, y: 40, w: 20, h: 1120 },
-          // Cubicle maze walls
           { x: 300, y: 150, w: 20, h: 400 },
           { x: 300, y: 680, w: 20, h: 350 },
           { x: 500, y: 350, w: 350, h: 20 },
@@ -1421,15 +1540,15 @@
           { x: 1100, y: 400, waypoints: [{ x: 1020, y: 400 }, { x: 1380, y: 400 }], fov: 80, range: 220, type: 'guard' },
           { x: 1150, y: 900, waypoints: [{ x: 1000, y: 900 }, { x: 1400, y: 900 }], fov: 75, range: 210, type: 'guard' }
         ],
-        cameras: [
-          { x: 950, y: 140, baseAngle: 270, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }
-        ],
+        cameras: [{ x: 950, y: 140, baseAngle: 270, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }],
         drones: []
       },
       {
         floor: 5,
-        title: "FLOOR 05 // 05F BIO-ROBOTICS LAB",
-        briefing: "Warning: Autonomous patrol drones detected. They have full 360-degree audio sensors. Silent movement is mandatory.",
+        title_ko: "구역 05 // 05F 바이오 로보틱스 랩",
+        briefing_ko: "주의: 자율 순찰 드론이 배치되었습니다. 360도 음향 센서를 지녔으니 무소음 잠행이 필수입니다.",
+        title_en: "FLOOR 05 // 05F BIO-ROBOTICS LAB",
+        briefing_en: "Warning: Autonomous patrol drones detected. They have full 360-degree audio sensors. Silent movement is mandatory.",
         mapW: 1700, mapH: 1200,
         playerStart: { x: 100, y: 1050 },
         exitZone: { x: 1550, y: 150, w: 90, h: 90 },
@@ -1441,7 +1560,6 @@
           { x: 40, y: 1140, w: 1620, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1640, y: 40, w: 20, h: 1120 },
-          // Cleanroom chambers
           { x: 350, y: 150, w: 20, h: 600 },
           { x: 350, y: 750, w: 400, h: 20 },
           { x: 750, y: 350, w: 20, h: 420 },
@@ -1467,26 +1585,18 @@
           { x: 850, y: 300, waypoints: [{ x: 800, y: 300 }, { x: 950, y: 300 }], fov: 80, range: 210, type: 'guard' },
           { x: 1500, y: 550, waypoints: [{ x: 1450, y: 350 }, { x: 1450, y: 800 }], fov: 80, range: 220, type: 'guard' }
         ],
-        cameras: [
-          { x: 760, y: 360, baseAngle: 180, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }
-        ],
+        cameras: [{ x: 760, y: 360, baseAngle: 180, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }],
         drones: [
-          {
-            x: 550, y: 450,
-            waypoints: [{ x: 450, y: 450 }, { x: 680, y: 450 }],
-            angle: 0, range: 180
-          },
-          {
-            x: 1180, y: 450,
-            waypoints: [{ x: 1080, y: 450 }, { x: 1280, y: 450 }],
-            angle: 0, range: 180
-          }
+          { x: 550, y: 450, waypoints: [{ x: 450, y: 450 }, { x: 680, y: 450 }], angle: 0, range: 180 },
+          { x: 1180, y: 450, waypoints: [{ x: 1080, y: 450 }, { x: 1280, y: 450 }], angle: 0, range: 180 }
         ]
       },
       {
         floor: 6,
-        title: "FLOOR 06 // 07F DATA VAULT ARCHIVE",
-        briefing: "Tri-camera setup scanning the central vault corridor. Cut power before retrieving the classified drives.",
+        title_ko: "구역 06 // 07F 데이터 볼트 아카이브",
+        briefing_ko: "중앙 볼트를 3대의 카메라가 교차 감시합니다. 전력을 차단한 뒤 기밀 드라이브를 회수하십시오.",
+        title_en: "FLOOR 06 // 07F DATA VAULT ARCHIVE",
+        briefing_en: "Tri-camera setup scanning the central vault corridor. Cut power before retrieving the classified drives.",
         mapW: 1800, mapH: 1200,
         playerStart: { x: 100, y: 600 },
         exitZone: { x: 1680, y: 600, w: 80, h: 90 },
@@ -1498,12 +1608,10 @@
           { x: 40, y: 1140, w: 1720, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1740, y: 40, w: 20, h: 1120 },
-          // Central Vault Box
           { x: 750, y: 450, w: 300, h: 20 },
           { x: 750, y: 730, w: 300, h: 20 },
           { x: 750, y: 450, w: 20, h: 300 },
           { x: 1030, y: 450, w: 20, h: 300 },
-          // Outer partitions
           { x: 400, y: 250, w: 20, h: 700 },
           { x: 1350, y: 250, w: 20, h: 700 }
         ],
@@ -1532,14 +1640,14 @@
           { x: 1020, y: 440, baseAngle: 225, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 230 },
           { x: 900, y: 740, baseAngle: 90, sweepRange: 50, sweepSpeed: 0.9, fov: 65, range: 240 }
         ],
-        drones: [
-          { x: 900, y: 250, waypoints: [{ x: 750, y: 250 }, { x: 1050, y: 250 }], angle: 0, range: 170 }
-        ]
+        drones: [{ x: 900, y: 250, waypoints: [{ x: 750, y: 250 }, { x: 1050, y: 250 }], angle: 0, range: 170 }]
       },
       {
         floor: 7,
-        title: "FLOOR 07 // 09F VIP EXECUTIVE SUITES",
-        briefing: "Elite Enforcers on patrol. Their audio sensitivity and vision range are heavily augmented. Do not approach from the front.",
+        title_ko: "구역 07 // 09F VIP 중역 집무실",
+        briefing_ko: "강화된 엘리트 인포서가 순찰 중입니다. 시야와 청각이 극도로 예민하니 정면 접근을 피하십시오.",
+        title_en: "FLOOR 07 // 09F VIP EXECUTIVE SUITES",
+        briefing_en: "Elite Enforcers on patrol. Their audio sensitivity and vision range are heavily augmented. Do not approach from the front.",
         mapW: 1800, mapH: 1200,
         playerStart: { x: 100, y: 150 },
         exitZone: { x: 1650, y: 1050, w: 90, h: 90 },
@@ -1551,7 +1659,6 @@
           { x: 40, y: 1140, w: 1720, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1740, y: 40, w: 20, h: 1120 },
-          // Suite corridors
           { x: 350, y: 150, w: 20, h: 700 },
           { x: 350, y: 850, w: 450, h: 20 },
           { x: 800, y: 350, w: 20, h: 520 },
@@ -1582,14 +1689,14 @@
           { x: 810, y: 360, baseAngle: 90, sweepRange: 50, sweepSpeed: 1.0, fov: 65, range: 250 },
           { x: 1260, y: 360, baseAngle: 0, sweepRange: 45, sweepSpeed: 0.8, fov: 65, range: 250 }
         ],
-        drones: [
-          { x: 1550, y: 800, waypoints: [{ x: 1400, y: 800 }, { x: 1650, y: 800 }], angle: 0, range: 190 }
-        ]
+        drones: [{ x: 1550, y: 800, waypoints: [{ x: 1400, y: 800 }, { x: 1650, y: 800 }], angle: 0, range: 190 }]
       },
       {
         floor: 8,
-        title: "FLOOR 08 // 12F CYBER DEFENSE MATRIX",
-        briefing: "Two terminals require sequential synchronization. Smoke grenades provide essential cover in the main artery.",
+        title_ko: "구역 08 // 12F 사이버 방어 매트릭스",
+        briefing_ko: "2중 단말기 동기화가 필요합니다. 중앙 복도에서는 연막탄으로 몸을 숨기십시오.",
+        title_en: "FLOOR 08 // 12F CYBER DEFENSE MATRIX",
+        briefing_en: "Two terminals require sequential synchronization. Smoke grenades provide essential cover in the main artery.",
         mapW: 1900, mapH: 1200,
         playerStart: { x: 120, y: 600 },
         exitZone: { x: 1750, y: 600, w: 90, h: 90 },
@@ -1601,7 +1708,6 @@
           { x: 40, y: 1140, w: 1820, h: 20 },
           { x: 40, y: 40, w: 20, h: 1120 },
           { x: 1840, y: 40, w: 20, h: 1120 },
-          // Heavy matrix dividers
           { x: 350, y: 200, w: 30, h: 800 },
           { x: 700, y: 150, w: 30, h: 500 },
           { x: 700, y: 750, w: 30, h: 400 },
@@ -1640,8 +1746,10 @@
       },
       {
         floor: 9,
-        title: "FLOOR 09 // 15F ORION AI CORE SANCTUM",
-        briefing: "The central intelligence hub. You must hold position for 5 seconds while ripping Orion's encryption keys.",
+        title_ko: "구역 09 // 15F 오리온 AI 코어 성소",
+        briefing_ko: "중앙 인공지능 코어입니다. 오리온 암호키를 추출하는 5초 동안 위치를 사수하십시오.",
+        title_en: "FLOOR 09 // 15F ORION AI CORE SANCTUM",
+        briefing_en: "The central intelligence hub. You must hold position for 5 seconds while ripping Orion's encryption keys.",
         mapW: 2000, mapH: 1300,
         playerStart: { x: 150, y: 650 },
         exitZone: { x: 1850, y: 650, w: 90, h: 100 },
@@ -1653,12 +1761,10 @@
           { x: 40, y: 1240, w: 1920, h: 20 },
           { x: 40, y: 40, w: 20, h: 1220 },
           { x: 1940, y: 40, w: 20, h: 1220 },
-          // Octagonal core baffle walls
           { x: 500, y: 350, w: 30, h: 600 },
           { x: 1500, y: 350, w: 30, h: 600 },
           { x: 750, y: 250, w: 500, h: 30 },
           { x: 750, y: 1020, w: 500, h: 30 },
-          // Core pillars
           { x: 850, y: 500, w: 40, h: 40 },
           { x: 1150, y: 500, w: 40, h: 40 },
           { x: 850, y: 760, w: 40, h: 40 },
@@ -1696,8 +1802,10 @@
       },
       {
         floor: 10,
-        title: "FLOOR 10 // ROOFTOP SKY-PAD APEX",
-        briefing: "Extraction VTOL inbound on the pad! Neutralize or evade the rooftop strike team and breach the extraction ship.",
+        title_ko: "구역 10 // 옥상 스카이패드 헬리패드",
+        briefing_ko: "탈출용 VTOL이 착륙장에 진입했습니다! 옥상 특수 타격대를 뚫고 건쉽에 탑승하십시오!",
+        title_en: "FLOOR 10 // ROOFTOP SKY-PAD APEX",
+        briefing_en: "Extraction VTOL inbound on the pad! Neutralize or evade the rooftop strike team and breach the extraction ship.",
         mapW: 2000, mapH: 1400,
         playerStart: { x: 150, y: 1250 },
         exitZone: { x: 1000, y: 250, w: 160, h: 160 },
@@ -1709,12 +1817,10 @@
           { x: 40, y: 1340, w: 1920, h: 20 },
           { x: 40, y: 40, w: 20, h: 1320 },
           { x: 1940, y: 40, w: 20, h: 1320 },
-          // Helipad structure boundaries & maintenance sheds
           { x: 200, y: 500, w: 300, h: 25 },
           { x: 500, y: 500, w: 25, h: 400 },
           { x: 1500, y: 500, w: 300, h: 25 },
           { x: 1475, y: 500, w: 25, h: 400 },
-          // Helipad blast walls
           { x: 800, y: 150, w: 20, h: 300 },
           { x: 1200, y: 150, w: 20, h: 300 },
           { x: 700, y: 1050, w: 600, h: 25 }
@@ -1751,7 +1857,7 @@
     ];
 
     /* ==========================================================================
-       5. MAIN ENGINE & AGENT SIMULATION
+       6. MAIN GAME ENGINE
        ========================================================================== */
     class GameEngine {
       constructor() {
@@ -1759,6 +1865,7 @@
         this.ctx = this.canvas.getContext('2d');
         this.audio = new SoundEngine();
         this.saveManager = new SaveManager();
+        this.lang = this.saveManager.data.lang || 'ko';
 
         this.width = window.innerWidth;
         this.height = window.innerHeight;
@@ -1767,50 +1874,109 @@
 
         // Input
         this.keys = {};
-        this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false, rightDown: false };
+        this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
         this.setupInputs();
 
         // Game State
         this.currentFloor = 1;
-        this.state = 'TITLE'; // TITLE, PLAYING, DEBRIEF, GAMEOVER, PAUSED
-        this.camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
+        this.state = 'TITLE';
+        this.camera = { x: 0, y: 0 };
         this.levelTime = 0;
         this.stats = { takedowns: 0, alarmsRaised: 0, kills: 0 };
 
-        // Level Entities
-        this.player = null;
-        this.walls = [];
-        this.doors = [];
-        this.vents = [];
-        this.shadows = [];
-        this.guards = [];
-        this.cameras = [];
-        this.drones = [];
-        this.projectiles = [];
-        this.smokeClouds = [];
-        this.noiseWaves = [];
-        this.particles = [];
-        this.mainframe = null;
-        this.breaker = null;
-        this.terminal = null;
-        this.exitZone = null;
+        // Pre-initialize Level Entities so this.player is never null
+        this.startLevel(this.currentFloor);
+        this.state = 'TITLE'; // Re-lock in TITLE state
+        document.getElementById('modal-title').classList.add('open');
 
-        // Blackout & Alarm
-        this.blackoutTimer = 0;
-        this.alarmLevel = 'NORMAL'; // NORMAL, SUSPICIOUS, ALARM
-        this.alarmTimer = 0;
-
-        // Interaction Prompt
-        this.currentPrompt = null;
-
-        // UI Binding
+        // UI Binding & I18N
         this.bindUI();
+        this.applyLanguage();
         this.renderTitleLevels();
         this.updateHUDStats();
 
         // Main Loop
         this.lastTime = performance.now();
         requestAnimationFrame((t) => this.loop(t));
+      }
+
+      t(key) {
+        return I18N[this.lang][key] || I18N['en'][key] || '';
+      }
+
+      toggleLanguage() {
+        this.lang = this.lang === 'ko' ? 'en' : 'ko';
+        this.saveManager.data.lang = this.lang;
+        this.saveManager.save();
+        this.applyLanguage();
+        this.renderTitleLevels();
+        this.updateHUDStats();
+      }
+
+      applyLanguage() {
+        const t = (k) => this.t(k);
+        document.getElementById('btn-lang-toggle').innerText = this.lang === 'ko' ? '🌐 한국어' : '🌐 ENGLISH';
+        document.getElementById('label-agent-name').innerText = t('agentName');
+        document.getElementById('label-vitality').innerText = t('vitality');
+        document.getElementById('label-camo').innerText = t('camoBattery');
+        document.getElementById('label-alert-title').innerText = t('facilityAlert');
+        document.getElementById('controls-hint-box').innerHTML = t('controlsHtml');
+
+        // Title Modal
+        document.getElementById('title-modal-title').innerText = t('titleMain');
+        document.getElementById('title-modal-sub').innerText = t('titleSub');
+        document.getElementById('title-modal-lore').innerHTML = t('titleLore');
+        document.getElementById('title-sector-select').innerText = t('titleSector');
+        document.getElementById('btn-reset-save').innerText = t('btnReset');
+        document.getElementById('btn-open-shop').innerText = t('btnUpgrades');
+        document.getElementById('btn-start-mission').innerText = t('btnStart');
+
+        // Shop Modal
+        document.getElementById('shop-modal-title').innerText = t('shopTitle');
+        document.getElementById('shop-modal-sub').innerText = t('shopSub');
+        document.getElementById('btn-close-shop').innerText = t('shopClose');
+
+        // Debrief Modal
+        document.getElementById('debrief-modal-title').innerText = t('debriefTitle');
+        document.getElementById('btn-next-mission').innerText = t('debriefNext');
+        document.getElementById('stat-label-base').innerText = t('statBase');
+        document.getElementById('stat-label-ghost').innerText = t('statGhost');
+        document.getElementById('stat-label-shadow').innerText = t('statShadow');
+        document.getElementById('stat-label-takedowns').innerText = t('statTakedowns');
+        document.getElementById('stat-label-time').innerText = t('statTime');
+        document.getElementById('stat-label-total').innerText = t('statTotal');
+
+        // Pause Modal
+        document.getElementById('pause-modal-title').innerText = t('pauseTitle');
+        document.getElementById('pause-modal-sub').innerText = t('pauseSub');
+        document.getElementById('pause-modal-desc').innerText = t('pauseDesc');
+        document.getElementById('btn-pause-resume').innerText = t('pauseResume');
+        document.getElementById('btn-pause-retry').innerText = t('pauseRetry');
+        document.getElementById('btn-pause-exit').innerText = t('pauseExit');
+
+        // Game Over Modal
+        document.getElementById('gameover-modal-title').innerText = t('gameoverTitle');
+        document.getElementById('gameover-modal-desc').innerText = t('gameoverDesc');
+        document.getElementById('gameover-modal-tip').innerHTML = t('gameoverTip');
+        document.getElementById('btn-retry-mission').innerText = t('gameoverRetry');
+
+        // Victory Modal
+        document.getElementById('victory-modal-title').innerText = t('victoryTitle');
+        document.getElementById('victory-modal-desc').innerHTML = t('victoryDesc');
+        document.getElementById('victory-rating-label').innerText = t('victoryRating');
+        document.getElementById('btn-victory-main').innerText = t('victoryReturn');
+
+        // Gadgets Label
+        t('gadgetNames').forEach((name, idx) => {
+          const el = document.getElementById(`gadget-label-${idx}`);
+          if (el) el.innerText = name;
+        });
+
+        // Current Floor Title
+        const cfg = LEVEL_CONFIGS[this.currentFloor - 1];
+        if (cfg) {
+          document.getElementById('floor-name').innerText = this.lang === 'ko' ? cfg.title_ko : cfg.title_en;
+        }
       }
 
       resize() {
@@ -1890,6 +2056,8 @@
       }
 
       bindUI() {
+        document.getElementById('btn-lang-toggle').addEventListener('click', () => this.toggleLanguage());
+
         document.getElementById('btn-sound-toggle').addEventListener('click', () => {
           const enabled = this.audio.toggle();
           document.getElementById('btn-sound-toggle').innerText = `SFX: ${enabled ? 'ON' : 'OFF'}`;
@@ -1900,7 +2068,7 @@
         });
 
         document.getElementById('btn-reset-save').addEventListener('click', () => {
-          if (confirm("Reset all operational progress and credits?")) {
+          if (confirm(this.t('resetConfirm'))) {
             this.saveManager.reset();
             this.currentFloor = 1;
             this.renderTitleLevels();
@@ -1940,23 +2108,40 @@
 
       openShop() {
         const modal = document.getElementById('modal-shop');
-        document.getElementById('shop-credits-display').innerText = `CREDITS: ${this.saveManager.data.credits} CR`;
+        document.getElementById('shop-credits-display').innerText = `${this.t('creditsLabel')} ${this.saveManager.data.credits} CR`;
         const list = document.getElementById('shop-upgrade-list');
         list.innerHTML = '';
 
-        UPGRADES_DEF.forEach(u => {
+        const upgNames = this.lang === 'ko' ? [
+          { name: "사이버 스프린트 레그", desc: "잠행 및 질주 속도를 +25% 증가시킵니다." },
+          { name: "무소음 흡음 인솔", desc: "달리기 소음 파동 반경을 55% 축소합니다." },
+          { name: "써멀 안구 임플란트", desc: "벽 너머 모든 적의 위치 및 시야각을 미니맵에 투시합니다." },
+          { name: "신경망 오버클럭", desc: "메인프레임 및 단말기 해킹 시간을 40% 단축합니다 (5초 -> 3초)." },
+          { name: "나노 클로킹 커패시터", desc: "광학 위장 지속 시간을 5초에서 9초로 확장합니다." },
+          { name: "확장형 다트 홀스터", desc: "매 미션 시작 시 기본 마취 다트 탄약을 +2발 추가합니다." }
+        ] : [
+          { name: "Cyber-Sprint Legs", desc: "Increases tactical sneak and sprint velocities by +25%." },
+          { name: "Silent Padded Soles", desc: "Reduces sprint noise wave propagation radius by 55%." },
+          { name: "Thermal Ocular Implant", desc: "Renders silhouettes and vision arcs of all guards through walls." },
+          { name: "Neural Overclock", desc: "Reduces mainframe and terminal hacking time by 40% (5s -> 3s)." },
+          { name: "Nano Cloak Capacitor", desc: "Extends Optical Camo duration from 5 seconds to 9 seconds." },
+          { name: "Expanded Dart Holster", desc: "Increases starting Tranq Darts from 2 to 4 each mission." }
+        ];
+
+        UPGRADES_DEF.forEach((u, idx) => {
           const installed = this.saveManager.hasUpgrade(u.id);
+          const meta = upgNames[idx];
           const card = document.createElement('div');
           card.className = `upgrade-card ${installed ? 'installed' : ''}`;
           card.innerHTML = `
             <div>
               <div class="upgrade-header">
-                <span class="upgrade-name">${u.name}</span>
-                <span class="upgrade-cost">${installed ? 'INSTALLED' : u.cost + ' CR'}</span>
+                <span class="upgrade-name">${meta.name}</span>
+                <span class="upgrade-cost">${installed ? this.t('shopInstalled') : u.cost + ' CR'}</span>
               </div>
-              <div class="upgrade-desc">${u.desc}</div>
+              <div class="upgrade-desc">${meta.desc}</div>
             </div>
-            ${!installed ? `<button class="btn btn-secondary" style="font-size: 11px; padding: 6px;" data-id="${u.id}">INSTALL</button>` : `<div style="font-size: 11px; color: var(--neon-green); font-weight: bold;">ONLINE</div>`}
+            ${!installed ? `<button class="btn btn-secondary" style="font-size: 11px; padding: 6px;" data-id="${u.id}">${this.t('shopInstall')}</button>` : `<div style="font-size: 11px; color: var(--neon-green); font-weight: bold;">${this.t('shopOnline')}</div>`}
           `;
 
           if (!installed) {
@@ -1966,7 +2151,7 @@
                 this.openShop();
                 this.updateHUDStats();
               } else {
-                alert("Insufficient corporate credits.");
+                alert(this.t('shopNotEnough'));
               }
             });
           }
@@ -2004,11 +2189,11 @@
       }
 
       updateHUDStats() {
-        document.getElementById('credits-hud').innerText = `CREDITS: ${this.saveManager.data.credits} CR`;
+        document.getElementById('credits-hud').innerText = `${this.t('creditsLabel')} ${this.saveManager.data.credits} CR`;
       }
 
       /* ========================================================================
-         LEVEL INITIALIZATION
+         7. LEVEL INITIALIZATION
          ======================================================================== */
       startLevel(floorNum) {
         this.currentFloor = floorNum;
@@ -2019,6 +2204,8 @@
         document.getElementById('modal-debrief').classList.remove('open');
         document.getElementById('modal-gameover').classList.remove('open');
         document.getElementById('modal-shop').classList.remove('open');
+        document.getElementById('modal-pause').classList.remove('open');
+        document.getElementById('modal-victory').classList.remove('open');
 
         // Reset state
         this.state = 'PLAYING';
@@ -2086,7 +2273,7 @@
           fov: g.fov,
           range: g.range,
           type: g.type,
-          state: 'PATROL', // PATROL, SUSPICIOUS, CHASE, STUNNED
+          state: 'PATROL',
           alertMeter: 0,
           investigateTarget: null,
           stunTimer: 0,
@@ -2127,14 +2314,15 @@
         this.noiseWaves = [];
         this.particles = [];
 
-        // Camera init
+        // Camera init centered on player
         this.camera.x = this.player.x - this.width / 2;
         this.camera.y = this.player.y - this.height / 2;
 
         // Update HUD
-        document.getElementById('floor-name').innerText = config.title;
-        document.getElementById('mission-objective').innerText = "OBJ: Access Mainframe & Extract";
-        this.showComm("ORACLE // TAC-COM", config.briefing, 5000);
+        document.getElementById('floor-name').innerText = this.lang === 'ko' ? config.title_ko : config.title_en;
+        document.getElementById('mission-objective').innerText = this.t('objDefault');
+        const briefing = this.lang === 'ko' ? config.briefing_ko : config.briefing_en;
+        this.showComm("ORACLE // TAC-COM", briefing, 5000);
         this.updateGadgetUI();
         this.updateHUDStats();
       }
@@ -2151,34 +2339,39 @@
       }
 
       /* ========================================================================
-         MAIN LOOP & UPDATES
+         8. MAIN LOOP & ENGINE UPDATES
          ======================================================================== */
       loop(timestamp) {
         const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
         this.lastTime = timestamp;
 
-        if (this.state === 'PLAYING') {
-          this.update(dt);
+        try {
+          if (this.state === 'PLAYING') {
+            this.update(dt);
+          }
+          this.render();
+        } catch (err) {
+          console.error("Frame Loop Exception:", err);
         }
 
-        this.render();
         requestAnimationFrame((t) => this.loop(t));
       }
 
       update(dt) {
+        if (!this.player) return;
         this.levelTime += dt;
         const config = LEVEL_CONFIGS[this.currentFloor - 1];
 
         // 1. Player Input & Movement
         this.updatePlayer(dt, config);
 
-        // 2. Camera Follow Smoothly (Lerp)
+        // 2. Camera Smooth Follow (Lerp)
         const targetCamX = this.player.x - this.width / 2;
         const targetCamY = this.player.y - this.height / 2;
         this.camera.x += (targetCamX - this.camera.x) * 0.1;
         this.camera.y += (targetCamY - this.camera.y) * 0.1;
 
-        // Calculate Mouse in World Space
+        // Calculate Mouse in World Coordinates
         this.mouse.worldX = this.mouse.x + this.camera.x;
         this.mouse.worldY = this.mouse.y + this.camera.y;
         this.player.angle = Math.atan2(this.mouse.worldY - this.player.y, this.mouse.worldX - this.player.x);
@@ -2187,7 +2380,7 @@
         if (this.blackoutTimer > 0) {
           this.blackoutTimer -= dt;
           if (this.blackoutTimer <= 0) {
-            this.showComm("ORACLE // TAC-COM", "Facility power grid restored! Watch your corners.", 3500);
+            this.showComm("ORACLE // TAC-COM", this.t('commBlackoutEnd'), 3500);
           }
         }
 
@@ -2198,7 +2391,7 @@
           if (!anyGuardChasing && !anyDroneChasing && this.alarmTimer > 20) {
             this.alarmLevel = 'SUSPICIOUS';
             this.audio.stopSiren();
-            this.showComm("ORACLE // TAC-COM", "Security lost visual. Alert downgraded to Suspicious.", 3000);
+            this.showComm("ORACLE // TAC-COM", this.t('commAlertDowngrade'), 3000);
           }
         } else if (this.alarmLevel === 'SUSPICIOUS') {
           let anyAlert = this.guards.some(g => g.state === 'SUSPICIOUS' && !g.isDead);
@@ -2210,7 +2403,9 @@
         // Update Alarm HUD Badge
         const badge = document.getElementById('alert-badge');
         badge.className = `alert-badge ${this.alarmLevel.toLowerCase()}`;
-        badge.innerText = this.alarmLevel === 'ALARM' ? 'RED ALERT // COMBAT' : (this.alarmLevel === 'SUSPICIOUS' ? 'SUSPICIOUS // INVESTIGATING' : 'ALL CLEAR');
+        badge.innerText = this.alarmLevel === 'ALARM' 
+          ? this.t('alertAlarm') 
+          : (this.alarmLevel === 'SUSPICIOUS' ? this.t('alertSuspicious') : this.t('alertClear'));
 
         // 4. Update Projectiles, Gadgets, Waves, Particles
         this.updateProjectiles(dt);
@@ -2233,7 +2428,7 @@
       }
 
       /* ========================================================================
-         PLAYER LOGIC
+         9. PLAYER LOGIC & INPUT
          ======================================================================== */
       updatePlayer(dt, config) {
         const p = this.player;
@@ -2328,11 +2523,9 @@
       }
 
       checkCollision(x, y, radius) {
-        // Walls
         for (const w of this.walls) {
           if (circleRectCollision(x, y, radius, w.x, w.y, w.w, w.h)) return true;
         }
-        // Closed doors
         for (const d of this.doors) {
           if (!d.open && circleRectCollision(x, y, radius, d.x, d.y, d.w, d.h)) return true;
         }
@@ -2340,7 +2533,7 @@
       }
 
       /* ========================================================================
-         AI GUARDS & SENSORS
+         10. AI GUARDS & SENSORS
          ======================================================================== */
       updateGuards(dt) {
         const p = this.player;
@@ -2367,14 +2560,11 @@
 
           let canSeePlayer = false;
           if (!p.isCloaked && !p.inVent && dToPlayer <= effectiveRange) {
-            // Check inside vision cone
             const angleToPlayer = Math.atan2(p.y - g.y, p.x - g.x);
             let diffAngle = Math.abs(this.normalizeAngle(angleToPlayer - g.angle));
 
             if (diffAngle <= (g.fov * Math.PI / 180) / 2) {
-              // Raycast Line of Sight
               if (this.hasLineOfSight(g.x, g.y, p.x, p.y)) {
-                // Check if obscured by smoke
                 if (!this.isInSmoke(p.x, p.y) && !this.isInSmoke(g.x, g.y)) {
                   canSeePlayer = true;
                 }
@@ -2439,7 +2629,7 @@
                 g.x += Math.cos(angle) * (g.speed * 1.2);
                 g.y += Math.sin(angle) * (g.speed * 1.2);
               } else {
-                g.angle += dt * 2.0; // Look around
+                g.angle += dt * 2.0;
                 if (!g.lookTimer) g.lookTimer = 4.0;
                 g.lookTimer -= dt;
                 if (g.lookTimer <= 0) {
@@ -2474,10 +2664,8 @@
             return;
           }
 
-          // Sweep rotation
           cam.angle = cam.baseAngle + Math.sin(this.levelTime * cam.sweepSpeed) * cam.sweepRange;
 
-          // Check Player detection
           const d = dist(cam.x, cam.y, p.x, p.y);
           if (!p.isCloaked && !p.inVent && d < cam.range) {
             const angleToP = Math.atan2(p.y - cam.y, p.x - cam.x) * 180 / Math.PI;
@@ -2495,7 +2683,6 @@
       updateDrones(dt) {
         const p = this.player;
         this.drones.forEach(d => {
-          // Drone patrol
           if (d.state === 'PATROL' && d.waypoints.length > 0) {
             const wp = d.waypoints[d.currentWp];
             const distToWp = dist(d.x, d.y, wp.x, wp.y);
@@ -2519,7 +2706,6 @@
             }
           }
 
-          // Drone 360 sensor
           const dToPlayer = dist(d.x, d.y, p.x, p.y);
           if (!p.isCloaked && !p.inVent && dToPlayer < d.range && this.hasLineOfSight(d.x, d.y, p.x, p.y)) {
             if (!this.isInSmoke(p.x, p.y)) {
@@ -2531,7 +2717,7 @@
       }
 
       /* ========================================================================
-         INTERACTIONS & ENVIRONMENT
+         11. INTERACTIONS & ENVIRONMENT
          ======================================================================== */
       updateInteractions(dt) {
         const p = this.player;
@@ -2540,18 +2726,17 @@
         const promptDesc = document.getElementById('prompt-desc');
         let promptFound = false;
 
-        // Check Takedown on nearby Guard
+        // Check Takedown
         if (!p.isDraggingBody) {
           for (const g of this.guards) {
             if (!g.isDead && g.state !== 'STUNNED') {
               const d = dist(p.x, p.y, g.x, g.y);
-              if (d < 45) {
-                // Check if behind guard
+              if (d < 48) {
                 const angleToGuard = Math.atan2(g.y - p.y, g.x - p.x);
                 let diffAngle = Math.abs(this.normalizeAngle(g.angle - angleToGuard));
-                if (diffAngle < 1.2) { // In back arc
+                if (diffAngle < 1.2) {
                   promptKey.innerText = "E";
-                  promptDesc.innerText = "SILENT CHOKE TAKEDOWN";
+                  promptDesc.innerText = this.t('promptTakedown');
                   promptFound = true;
                   break;
                 }
@@ -2564,9 +2749,9 @@
         if (!promptFound) {
           for (const g of this.guards) {
             if (g.state === 'STUNNED' || g.isDead) {
-              if (dist(p.x, p.y, g.x, g.y) < 40) {
+              if (dist(p.x, p.y, g.x, g.y) < 45) {
                 promptKey.innerText = "G";
-                promptDesc.innerText = p.isDraggingBody ? "DROP BODY" : "DRAG & CONCEAL BODY";
+                promptDesc.innerText = p.isDraggingBody ? this.t('promptDrop') : this.t('promptDrag');
                 promptFound = true;
                 break;
               }
@@ -2574,12 +2759,12 @@
           }
         }
 
-        // Check Door Interaction
+        // Check Doors
         if (!promptFound) {
           for (const door of this.doors) {
             if (dist(p.x, p.y, door.x + door.w / 2, door.y + door.h / 2) < 55) {
               promptKey.innerText = "E";
-              promptDesc.innerText = door.open ? "CLOSE DOOR" : (door.locked ? "DOOR LOCKED (TERMINAL REQ.)" : "OPEN DOOR");
+              promptDesc.innerText = door.open ? this.t('promptDoorClose') : (door.locked ? this.t('promptDoorLocked') : this.t('promptDoorOpen'));
               promptFound = true;
               if (this.keys['KeyE'] && !door.locked && !this.doorDebounce) {
                 door.open = !door.open;
@@ -2596,14 +2781,14 @@
         if (!promptFound && this.breaker && !this.breaker.overloaded) {
           if (dist(p.x, p.y, this.breaker.x, this.breaker.y) < 50) {
             promptKey.innerText = "H";
-            promptDesc.innerText = "OVERLOAD BREAKER (BLACKOUT)";
+            promptDesc.innerText = this.t('promptBreaker');
             promptFound = true;
             if (this.keys['KeyH']) {
               this.breaker.overloaded = true;
               this.blackoutTimer = 25.0;
               this.audio.playSpark();
               this.createSparks(this.breaker.x, this.breaker.y, 25);
-              this.showComm("ORACLE // TAC-COM", "Grid overloaded! 25 seconds blackout initiated.", 3500);
+              this.showComm("ORACLE // TAC-COM", this.t('commBreakerHack'), 3500);
             }
           }
         }
@@ -2612,25 +2797,25 @@
         if (!promptFound && this.terminal && !this.terminal.hacked) {
           if (dist(p.x, p.y, this.terminal.x, this.terminal.y) < 50) {
             promptKey.innerText = "H";
-            promptDesc.innerText = "HACK SECURITY GRID (LOOP CAMERAS & UNLOCK DOORS)";
+            promptDesc.innerText = this.t('promptTerminal');
             promptFound = true;
             if (this.keys['KeyH']) {
               this.terminal.hacked = true;
               this.audio.playHackSuccess();
               this.cameras.forEach(c => c.disabledTimer = 18.0);
               this.doors.forEach(d => d.locked = false);
-              this.showComm("ORACLE // TAC-COM", "Firewalls breached! Cameras looping and security doors unlocked.", 4000);
+              this.showComm("ORACLE // TAC-COM", this.t('commTerminalHack'), 4000);
             }
           }
         }
 
-        // Check Mainframe (Target Download)
+        // Check Mainframe
         if (!promptFound && this.mainframe && !this.mainframe.downloaded) {
           if (dist(p.x, p.y, this.mainframe.x, this.mainframe.y) < 60) {
             promptKey.innerText = "H";
             const reqTime = this.saveManager.hasUpgrade('neural_clock') ? 3.0 : 5.0;
             const pct = Math.floor((p.downloadProgress / reqTime) * 100);
-            promptDesc.innerText = `DOWNLOAD MAINFRAME DATA (${pct}%)`;
+            promptDesc.innerText = `${this.t('promptDownload')} (${pct}%)`;
             promptFound = true;
 
             if (this.keys['KeyH']) {
@@ -2643,8 +2828,8 @@
                 p.downloadComplete = true;
                 this.exitZone.active = true;
                 this.audio.playHackSuccess();
-                this.showComm("ORACLE // TAC-COM", "MAIN ENCRYPTION CORE ACQUIRED! EXTRACTION LZ IS ACTIVE!", 6000);
-                document.getElementById('mission-objective').innerText = "OBJ: GET TO THE EXTRACTION ZONE!";
+                this.showComm("ORACLE // TAC-COM", this.t('commMainframeDone'), 6000);
+                document.getElementById('mission-objective').innerText = this.t('objExtract');
               }
             } else {
               p.isDownloading = false;
@@ -2664,7 +2849,7 @@
       }
 
       /* ========================================================================
-         GADGETS & ACTIONS
+         12. GADGETS & ACTIONS
          ======================================================================== */
       selectGadget(idx) {
         this.player.selectedGadget = idx;
@@ -2675,17 +2860,21 @@
 
       updateGadgetUI() {
         const p = this.player;
+        if (!p) return;
         document.getElementById('gadget-count-0').innerText = p.gadgets[0].count;
         document.getElementById('gadget-count-1').innerText = p.gadgets[1].count;
         document.getElementById('gadget-count-2').innerText = p.gadgets[2].count;
-        document.getElementById('gadget-count-3').innerText = p.isCloaked ? 'ACTIVE' : (p.cloakCooldown > 0 ? `${Math.ceil(p.cloakCooldown)}s` : 'READY');
+        document.getElementById('gadget-count-3').innerText = p.isCloaked 
+          ? this.t('gadgetActive') 
+          : (p.cloakCooldown > 0 ? `${Math.ceil(p.cloakCooldown)}s` : this.t('gadgetReady'));
       }
 
       triggerGadget() {
         const p = this.player;
+        if (!p) return;
         const g = p.gadgets[p.selectedGadget];
 
-        if (p.selectedGadget === 0) { // Tranq Dart
+        if (p.selectedGadget === 0) {
           if (g.count > 0) {
             g.count--;
             this.audio.playDart();
@@ -2700,13 +2889,12 @@
             });
             this.updateGadgetUI();
           }
-        } else if (p.selectedGadget === 1) { // Noisemaker Decoy
+        } else if (p.selectedGadget === 1) {
           if (g.count > 0) {
             g.count--;
             this.audio.playDecoy();
             this.createNoiseWave(this.mouse.worldX, this.mouse.worldY, 260);
             this.createSparks(this.mouse.worldX, this.mouse.worldY, 15);
-            // Alert nearby guards to investigate
             this.guards.forEach(guard => {
               if (dist(guard.x, guard.y, this.mouse.worldX, this.mouse.worldY) < 320 && !guard.isDead) {
                 guard.state = 'SUSPICIOUS';
@@ -2715,14 +2903,14 @@
             });
             this.updateGadgetUI();
           }
-        } else if (p.selectedGadget === 2) { // Smoke Bomb
+        } else if (p.selectedGadget === 2) {
           if (g.count > 0) {
             g.count--;
             this.audio.playSmoke();
             this.createSmokeCloud(this.mouse.worldX, this.mouse.worldY);
             this.updateGadgetUI();
           }
-        } else if (p.selectedGadget === 3) { // Optic Cloak
+        } else if (p.selectedGadget === 3) {
           if (!p.isCloaked && p.cloakCooldown <= 0) {
             p.isCloaked = true;
             p.cloakTimer = p.cloakDuration;
@@ -2734,10 +2922,11 @@
 
       handleTakedown() {
         const p = this.player;
+        if (!p) return;
         for (const g of this.guards) {
           if (!g.isDead && g.state !== 'STUNNED' && dist(p.x, p.y, g.x, g.y) < 48) {
             g.state = 'STUNNED';
-            g.stunTimer = 999999; // Knocked out for mission
+            g.stunTimer = 999999;
             this.audio.playTakedown();
             this.stats.takedowns++;
             this.createSparks(g.x, g.y, 8);
@@ -2748,6 +2937,7 @@
 
       handleDragBody() {
         const p = this.player;
+        if (!p) return;
         if (p.isDraggingBody) {
           p.isDraggingBody = false;
           p.draggedGuard = null;
@@ -2763,7 +2953,7 @@
       }
 
       /* ========================================================================
-         VFX & PHYSICS ENTITIES
+         13. VFX & PARTICLES
          ======================================================================== */
       createNoiseWave(x, y, maxRadius) {
         this.noiseWaves.push({ x, y, radius: 10, maxRadius, alpha: 1.0 });
@@ -2827,14 +3017,12 @@
           pr.y += pr.vy;
           pr.traveled += Math.hypot(pr.vx, pr.vy);
 
-          // Hit wall or door
           if (this.checkCollision(pr.x, pr.y, 4) || pr.traveled >= pr.range) {
             this.createSparks(pr.x, pr.y, 4);
             this.projectiles.splice(i, 1);
             continue;
           }
 
-          // Hit guard
           let hit = false;
           for (const g of this.guards) {
             if (!g.isDead && g.state !== 'STUNNED' && dist(pr.x, pr.y, g.x, g.y) < g.radius + 6) {
@@ -2854,7 +3042,7 @@
       }
 
       /* ========================================================================
-         ALARM & MISSION RESULTS
+         14. ALARMS & DEBRIEF
          ======================================================================== */
       triggerAlarm(reason) {
         if (this.alarmLevel !== 'ALARM') {
@@ -2864,14 +3052,12 @@
           this.audio.startSiren();
           this.showComm("FACILITY SECURITY", `INTRUDER ALERT! ${reason}`, 4500);
 
-          // Alert all guards
           this.guards.forEach(g => {
             if (!g.isDead && g.state !== 'STUNNED') {
               g.state = 'CHASE';
             }
           });
 
-          // Scramble emergency combat drone
           this.spawnAlarmDrone();
         }
       }
@@ -2894,7 +3080,7 @@
             investigateTarget: { x: this.player.x, y: this.player.y }
           });
           this.createSparks(spawnX, spawnY, 20);
-          this.showComm("ORACLE // TAC-COM", "CRITICAL WARNING: Combat Drone scrambled to eliminate you!", 4500);
+          this.showComm("ORACLE // TAC-COM", this.t('commAlarmDrone'), 4500);
         }
       }
 
@@ -2903,7 +3089,6 @@
         this.audio.stopSiren();
         this.audio.playHackSuccess();
 
-        // Calculate Rank & Bounty
         const baseBounty = 500;
         const ghostBonus = this.stats.kills === 0 ? 400 : 0;
         const shadowBonus = this.stats.alarmsRaised === 0 ? 500 : 0;
@@ -2914,11 +3099,10 @@
         else if (this.stats.alarmsRaised <= 1) rank = 'A';
         else if (this.stats.alarmsRaised <= 3) rank = 'B';
 
-        // Save
         this.saveManager.completeFloor(this.currentFloor, totalCredits, rank);
 
-        // Populate Modal
-        document.getElementById('debrief-floor-name').innerText = `FLOOR 0${this.currentFloor} CLEARED`;
+        const cfg = LEVEL_CONFIGS[this.currentFloor - 1];
+        document.getElementById('debrief-floor-name').innerText = this.lang === 'ko' ? `${cfg.title_ko} 완료` : `${cfg.title_en} CLEARED`;
         const rankEl = document.getElementById('debrief-rank');
         rankEl.className = `rank-display rank-${rank}`;
         rankEl.innerText = `RANK ${rank}`;
@@ -2953,7 +3137,10 @@
         for (let i = 1; i <= 10; i++) {
           if (this.saveManager.data.ranks[i] === 'S') sRanks++;
         }
-        document.getElementById('victory-stats').innerHTML = `
+        document.getElementById('victory-stats').innerHTML = this.lang === 'ko' ? `
+          총 누적 기업 크레딧: <strong>${this.saveManager.data.credits.toLocaleString()} CR</strong><br>
+          퍼펙트 고스트(S-Rank) 달성 층: <strong>${sRanks} / 10</strong>
+        ` : `
           Total Corporate Credits: <strong>${this.saveManager.data.credits.toLocaleString()} CR</strong><br>
           Perfect 'Ghost S-Rank' Sectors: <strong>${sRanks} / 10</strong>
         `;
@@ -2967,13 +3154,12 @@
       }
 
       /* ========================================================================
-         RAYCASTING & LINE OF SIGHT
+         15. RAYCASTING & LINE OF SIGHT
          ======================================================================== */
       hasLineOfSight(x1, y1, x2, y2) {
         const p1 = { x: x1, y: y1 };
         const p2 = { x: x2, y: y2 };
 
-        // Test all walls
         for (const w of this.walls) {
           const lines = [
             [{ x: w.x, y: w.y }, { x: w.x + w.w, y: w.y }],
@@ -2986,7 +3172,6 @@
           }
         }
 
-        // Test closed doors
         for (const d of this.doors) {
           if (!d.open) {
             const lines = [
@@ -3052,14 +3237,15 @@
       }
 
       /* ========================================================================
-         CANVAS 2D RENDERING
+         16. CANVAS 2D RENDERING PIPELINE
          ======================================================================== */
       render() {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.width, this.height);
 
+        if (!this.player) return;
+
         ctx.save();
-        // Camera translation
         ctx.translate(-Math.floor(this.camera.x), -Math.floor(this.camera.y));
 
         // 1. Grid Background & Floor
@@ -3116,7 +3302,6 @@
         ctx.fillStyle = '#080d14';
         ctx.fillRect(0, 0, config.mapW, config.mapH);
 
-        // Subtle tech grid lines
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.035)';
         ctx.lineWidth = 1;
         const gridSize = 40;
@@ -3151,7 +3336,6 @@
           ctx.lineWidth = 1.5;
           ctx.strokeRect(v.x, v.y, v.w, v.h);
 
-          // Vent grate lines
           ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
           const step = 8;
           for (let i = step; i < Math.max(v.w, v.h); i += step) {
@@ -3199,7 +3383,6 @@
           ctx.lineWidth = 2;
           ctx.strokeRect(this.mainframe.x - 22, this.mainframe.y - 22, 44, 44);
 
-          // Pulsing halo
           ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
           ctx.beginPath();
           ctx.arc(this.mainframe.x, this.mainframe.y, 32 + Math.sin(this.levelTime * 4) * 4, 0, Math.PI * 2);
@@ -3221,7 +3404,7 @@
 
           ctx.fillStyle = ez.active ? '#00ff66' : '#64748b';
           ctx.font = 'bold 12px monospace';
-          ctx.fillText(ez.active ? 'LZ: EXTRACT' : 'LZ: LOCKED', ez.x + 8, ez.y + ez.h / 2 + 4);
+          ctx.fillText(ez.active ? this.t('lzExtract') : this.t('lzLocked'), ez.x + 8, ez.y + ez.h / 2 + 4);
         }
       }
 
@@ -3336,8 +3519,6 @@
       }
 
       renderEnemies(ctx) {
-        const hasThermal = this.saveManager.hasUpgrade('thermal_vision');
-
         // Guards
         this.guards.forEach(g => {
           if (g.isDead || g.state === 'STUNNED') return;
@@ -3346,7 +3527,6 @@
           ctx.translate(g.x, g.y);
           ctx.rotate(g.angle);
 
-          // Guard body
           ctx.fillStyle = g.type === 'elite' ? '#ff2a55' : '#1e3a8a';
           ctx.beginPath();
           ctx.arc(0, 0, g.radius, 0, Math.PI * 2);
@@ -3355,13 +3535,11 @@
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          // Gun direction indicator
           ctx.fillStyle = '#fff';
           ctx.fillRect(4, -3, 14, 6);
 
           ctx.restore();
 
-          // Alert bar over guard
           if (g.alertMeter > 0) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(g.x - 16, g.y - 28, 32, 6);
@@ -3399,7 +3577,6 @@
           ctx.strokeStyle = '#00f3ff';
           ctx.stroke();
 
-          // Rotors
           ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
           ctx.beginPath();
           ctx.arc(0, 0, 18, 0, Math.PI * 2);
@@ -3410,7 +3587,6 @@
       }
 
       renderProjectiles(ctx) {
-        // Darts
         this.projectiles.forEach(pr => {
           ctx.strokeStyle = '#00ff66';
           ctx.lineWidth = 3;
@@ -3420,54 +3596,17 @@
           ctx.stroke();
         });
 
-        // Particles
         this.particles.forEach(pt => {
           ctx.fillStyle = pt.color;
           ctx.fillRect(pt.x, pt.y, 2, 2);
         });
       }
 
-      renderPlayer(ctx) {
-        const p = this.player;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle);
-
-        // Cloak transparency or normal
-        ctx.globalAlpha = p.isCloaked ? 0.3 : 1.0;
-
-        // Player Circle
-        ctx.fillStyle = p.isCloaked ? '#bc13fe' : '#00f3ff';
-        ctx.beginPath();
-        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Hands / weapon aiming forward
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(4, -4, 12, 8);
-
-        ctx.restore();
-
-        // Wall hug outline
-        if (p.isHuggingWall) {
-          ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
-          ctx.setLineDash([2, 4]);
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      }
-
       renderDownloadStream(ctx) {
         const p = this.player;
-        if (!p.isDownloading || !this.mainframe) return;
+        if (!p || !p.isDownloading || !this.mainframe) return;
 
         ctx.save();
-        // Pulsing data beam
         ctx.strokeStyle = '#bc13fe';
         ctx.lineWidth = 2.5;
         ctx.setLineDash([6, 6]);
@@ -3477,7 +3616,6 @@
         ctx.lineTo(this.mainframe.x, this.mainframe.y);
         ctx.stroke();
 
-        // Download circular meter above player
         const reqTime = this.saveManager.hasUpgrade('neural_clock') ? 3.0 : 5.0;
         const progress = Math.min(1.0, p.downloadProgress / reqTime);
         ctx.setLineDash([]);
@@ -3490,9 +3628,42 @@
         ctx.restore();
       }
 
+      renderPlayer(ctx) {
+        const p = this.player;
+        if (!p) return;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+
+        ctx.globalAlpha = p.isCloaked ? 0.3 : 1.0;
+
+        ctx.fillStyle = p.isCloaked ? '#bc13fe' : '#00f3ff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(4, -4, 12, 8);
+
+        ctx.restore();
+
+        if (p.isHuggingWall) {
+          ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
       renderAimLaser(ctx) {
         const p = this.player;
-        if (p.selectedGadget !== 0 || p.gadgets[0].count <= 0) return;
+        if (!p || p.selectedGadget !== 0 || p.gadgets[0].count <= 0) return;
 
         const maxRange = 550;
         const hit = this.castRay(p.x, p.y, p.angle, maxRange);
@@ -3506,7 +3677,6 @@
         ctx.lineTo(hit.x, hit.y);
         ctx.stroke();
 
-        // Laser dot at impact
         ctx.fillStyle = '#00ff66';
         ctx.beginPath();
         ctx.arc(hit.x, hit.y, 2.5, 0, Math.PI * 2);
@@ -3516,6 +3686,7 @@
       }
 
       renderMinimap(ctx) {
+        if (!this.player) return;
         const mmW = 180;
         const mmH = 130;
         const mmX = this.width - mmW - 20;
@@ -3525,7 +3696,7 @@
         const scaleY = mmH / config.mapH;
 
         ctx.save();
-        ctx.fillStyle = 'rgba(6, 12, 20, 0.85)';
+        ctx.fillStyle = 'rgba(6, 12, 20, 0.88)';
         ctx.fillRect(mmX, mmY, mmW, mmH);
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
         ctx.lineWidth = 1;

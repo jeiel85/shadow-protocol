@@ -4,6 +4,7 @@
 > Pure Vanilla HTML5 Canvas & Procedural Web Audio API — **Zero External Libraries, Zero Assets, Single File Architecture**.
 
 [![Live Demo](https://img.shields.io/badge/PLAY_ONLINE-GitHub_Pages-00f3ff?style=for-the-badge&logo=github)](https://jeiel85.github.io/shadow-protocol/)
+[![Language](https://img.shields.io/badge/LANGUAGE-한국어_%2F_ENG-ff2a55?style=for-the-badge)]()
 [![Tech](https://img.shields.io/badge/ENGINE-Pure_HTML5_Canvas_2D-00ff66?style=for-the-badge)]()
 [![Audio](https://img.shields.io/badge/SFX-Web_Audio_API_Synthesizer-bc13fe?style=for-the-badge)]()
 [![Saves](https://img.shields.io/badge/DATA-LocalStorage_Sync-ffaa00?style=for-the-badge)]()
@@ -12,7 +13,9 @@
 
 ## 🎮 [⚡ 즉시 플레이하기 (Live Demo Play Online)](https://jeiel85.github.io/shadow-protocol/)
 
-외부 라이브러리나 이미지, 음원 다운로드 없이 브라우저에서 즉각 구동되는 완성형 탑다운 스텔스 잠입 액션 게임입니다.
+> **완벽한 한국어 / 영어 실시간 다국어 지원 (기본: 한국어)**  
+> 화면 상단의 `[🌐 한국어 / ENG]` 버튼을 클릭하여 언제든지 언어를 전환할 수 있습니다.  
+> 외부 라이브러리나 이미지, 음원 다운로드 없이 브라우저에서 즉각 구동되는 완성형 탑다운 스텔스 잠입 액션 게임입니다.
 
 ---
 
