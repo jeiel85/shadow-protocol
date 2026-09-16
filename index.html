@@ -1,0 +1,3578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SHADOW PROTOCOL: PHANTOM MAINFRAME</title>
+  <style>
+    :root {
+      --bg-color: #080c10;
+      --panel-bg: rgba(10, 16, 26, 0.92);
+      --neon-cyan: #00f3ff;
+      --neon-green: #00ff66;
+      --neon-amber: #ffaa00;
+      --neon-red: #ff2a55;
+      --neon-purple: #bc13fe;
+      --text-dim: #5c708a;
+      --text-bright: #e6f1ff;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: var(--font-mono);
+      color: var(--text-bright);
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at center, #101924 0%, #06090d 100%);
+    }
+
+    canvas#gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    /* CRT & Scanline Overlay */
+    .crt-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 20;
+      opacity: 0.6;
+    }
+
+    .vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
+      z-index: 21;
+    }
+
+    /* In-Game HUD */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 20px;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .hud-card {
+      background: var(--panel-bg);
+      border: 1px solid rgba(0, 243, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 243, 255, 0.1);
+      border-radius: 4px;
+      padding: 10px 14px;
+      pointer-events: auto;
+      backdrop-filter: blur(4px);
+    }
+
+    .agent-status {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 220px;
+    }
+
+    .agent-name {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--neon-cyan);
+      letter-spacing: 1.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 0.15s ease-out;
+    }
+
+    .bar-health {
+      background: linear-gradient(90deg, #ff2a55, #ff6b8b);
+      width: 100%;
+    }
+
+    .bar-cloak {
+      background: linear-gradient(90deg, #bc13fe, #00f3ff);
+      width: 100%;
+    }
+
+    /* Alert Status Display */
+    .alert-meter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 24px;
+    }
+
+    .alert-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+
+    .alert-badge {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      padding: 4px 16px;
+      border-radius: 3px;
+      transition: all 0.3s;
+    }
+
+    .alert-badge.normal {
+      color: var(--neon-green);
+      background: rgba(0, 255, 102, 0.12);
+      border: 1px solid var(--neon-green);
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.6);
+    }
+
+    .alert-badge.suspicious {
+      color: var(--neon-amber);
+      background: rgba(255, 170, 0, 0.15);
+      border: 1px solid var(--neon-amber);
+      text-shadow: 0 0 10px rgba(255, 170, 0, 0.6);
+      animation: pulse 1s infinite alternate;
+    }
+
+    .alert-badge.alarm {
+      color: var(--neon-red);
+      background: rgba(255, 42, 85, 0.25);
+      border: 1px solid var(--neon-red);
+      text-shadow: 0 0 15px rgba(255, 42, 85, 0.8);
+      animation: flash-alarm 0.5s infinite alternate;
+    }
+
+    @keyframes flash-alarm {
+      0% { opacity: 0.7; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.05); }
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    /* Floor & Objectives */
+    .mission-info {
+      text-align: right;
+      min-width: 220px;
+    }
+
+    .floor-tag {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    .obj-text {
+      font-size: 11px;
+      color: #a0aec0;
+      margin-top: 4px;
+    }
+
+    /* Middle Comm Transmission Box */
+    .comm-box {
+      position: absolute;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6, 12, 20, 0.95);
+      border: 1px solid var(--neon-cyan);
+      border-left: 5px solid var(--neon-cyan);
+      padding: 10px 18px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      max-width: 600px;
+      z-index: 15;
+    }
+
+    .comm-box.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .comm-portrait {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--neon-cyan);
+      background: #0d1e30;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      color: var(--neon-cyan);
+    }
+
+    .comm-content {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .comm-sender {
+      color: var(--neon-cyan);
+      font-weight: bold;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* Bottom HUD: Gadgets & Interactions */
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    .controls-hint {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.6;
+      background: rgba(6, 10, 15, 0.7);
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .controls-hint span {
+      color: var(--neon-cyan);
+      font-weight: bold;
+    }
+
+    .gadget-bar {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .gadget-slot {
+      width: 68px;
+      height: 72px;
+      background: rgba(10, 18, 30, 0.85);
+      border: 1px solid rgba(0, 243, 255, 0.25);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .gadget-slot:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+    }
+
+    .gadget-slot.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.2);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .gadget-key {
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--text-dim);
+    }
+
+    .gadget-icon {
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .gadget-name {
+      font-size: 9px;
+      text-align: center;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .gadget-count {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--neon-cyan);
+    }
+
+    /* Context Prompt (E, H, Space) */
+    #prompt-action {
+      position: absolute;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #fff;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 16;
+    }
+
+    #prompt-action kbd {
+      background: var(--neon-cyan);
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    /* Fullscreen Modals: Menu, Shop, Debrief, Pause */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(4, 7, 12, 0.88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: 820px;
+      max-width: 90vw;
+      max-height: 85vh;
+      background: #091018;
+      border: 1px solid var(--neon-cyan);
+      box-shadow: 0 0 40px rgba(0, 243, 255, 0.25), inset 0 0 20px rgba(0, 243, 255, 0.05);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      background: rgba(0, 243, 255, 0.08);
+      border-bottom: 1px solid rgba(0, 243, 255, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--neon-cyan);
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: flex-end;
+      gap: 14px;
+    }
+
+    .btn {
+      padding: 10px 22px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+      color: var(--neon-cyan);
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--neon-cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--neon-cyan);
+    }
+
+    .btn-secondary {
+      border-color: #64748b;
+      background: transparent;
+      color: #94a3b8;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      border-color: var(--neon-red);
+      background: rgba(255, 42, 85, 0.1);
+      color: var(--neon-red);
+    }
+
+    .btn-danger:hover {
+      background: var(--neon-red);
+      color: #fff;
+      box-shadow: 0 0 15px var(--neon-red);
+    }
+
+    /* Upgrade Grid */
+    .upgrade-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .upgrade-card {
+      background: rgba(16, 26, 38, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .upgrade-card.installed {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 102, 0.05);
+    }
+
+    .upgrade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .upgrade-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text-bright);
+    }
+
+    .upgrade-cost {
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--neon-amber);
+    }
+
+    .upgrade-desc {
+      font-size: 11px;
+      color: #8da2ba;
+      line-height: 1.4;
+    }
+
+    /* Mission Debrief Stats */
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .stats-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stats-table td:last-child {
+      text-align: right;
+      font-weight: bold;
+      color: var(--neon-cyan);
+    }
+
+    .rank-display {
+      font-size: 48px;
+      font-weight: 900;
+      text-align: center;
+      margin: 10px 0;
+      letter-spacing: 4px;
+    }
+
+    .rank-S { color: #ffd700; text-shadow: 0 0 25px rgba(255, 215, 0, 0.7); }
+    .rank-A { color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0, 243, 255, 0.6); }
+    .rank-B { color: var(--neon-green); text-shadow: 0 0 15px rgba(0, 255, 102, 0.5); }
+    .rank-C { color: var(--neon-amber); }
+
+    /* Audio Toggle Button in HUD */
+    .sound-toggle-btn {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    .sound-toggle-btn:hover {
+      border-color: var(--neon-cyan);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="crt-overlay"></div>
+    <div class="vignette"></div>
+
+    <!-- HUD Overlay -->
+    <div id="hud">
+      <!-- Top Row -->
+      <div class="hud-top">
+        <div class="hud-card agent-status">
+          <div class="agent-name">
+            <span>OPERATIVE: PHANTOM</span>
+            <button id="btn-sound-toggle" class="sound-toggle-btn">SFX: ON</button>
+          </div>
+          <div>
+            <div style="font-size: 9px; color: #ff6b8b; margin-bottom: 2px;">VITALITY</div>
+            <div class="bar-container">
+              <div id="bar-health" class="bar-fill bar-health"></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 9px; color: #bc13fe; margin-bottom: 2px;">CAMO BATTERY</div>
+            <div class="bar-container">
+              <div id="bar-cloak" class="bar-fill bar-cloak"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-card alert-meter">
+          <div class="alert-title">FACILITY ALERT LEVEL</div>
+          <div id="alert-badge" class="alert-badge normal">ALL CLEAR</div>
+        </div>
+
+        <div class="hud-card mission-info">
+          <div id="floor-name" class="floor-tag">FLOOR 01 // B2 PARKING</div>
+          <div id="mission-objective" class="obj-text">OBJ: Infiltrate Mainframe & Extract</div>
+          <div id="credits-hud" style="font-size: 11px; color: var(--neon-amber); margin-top: 4px;">CREDITS: 0 CR</div>
+        </div>
+      </div>
+
+      <!-- Transmission Box -->
+      <div id="comm-box" class="comm-box">
+        <div class="comm-portrait">👁️</div>
+        <div class="comm-content">
+          <div class="comm-sender">ORACLE // TAC-COM</div>
+          <div id="comm-text">Phantom, you are inside the perimeter. Stay in the shadows.</div>
+        </div>
+      </div>
+
+      <!-- Action Prompt (Floating) -->
+      <div id="prompt-action">
+        <kbd id="prompt-key">E</kbd> <span id="prompt-desc">TAKEDOWN</span>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="hud-bottom">
+        <div class="controls-hint">
+          <div><span>[WASD]</span> Sneak / Walk (Silent) | <span>[SHIFT]</span> Sprint (Generates Noise)</div>
+          <div><span>[SPACE]</span> Wall Hug & Peek | <span>[E]</span> Takedown | <span>[G]</span> Drag Body</div>
+          <div><span>[H]</span> Hack Terminal/Breaker/Server | <span>[1-4] / [Q]</span> Use Gadget</div>
+        </div>
+
+        <div class="gadget-bar">
+          <div class="gadget-slot active" data-gadget="0">
+            <span class="gadget-key">1</span>
+            <span id="gadget-count-0" class="gadget-count">2</span>
+            <div class="gadget-icon">🎯</div>
+            <div class="gadget-name">Tranq Dart</div>
+          </div>
+          <div class="gadget-slot" data-gadget="1">
+            <span class="gadget-key">2</span>
+            <span id="gadget-count-1" class="gadget-count">2</span>
+            <div class="gadget-icon">🔊</div>
+            <div class="gadget-name">Noisemaker</div>
+          </div>
+          <div class="gadget-slot" data-gadget="2">
+            <span class="gadget-key">3</span>
+            <span id="gadget-count-2" class="gadget-count">2</span>
+            <div class="gadget-icon">💨</div>
+            <div class="gadget-name">Smoke Bomb</div>
+          </div>
+          <div class="gadget-slot" data-gadget="3">
+            <span class="gadget-key">4</span>
+            <span id="gadget-count-3" class="gadget-count">READY</span>
+            <div class="gadget-icon">✨</div>
+            <div class="gadget-name">Camo Cloak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Title Screen / Mission Select -->
+    <div id="modal-title" class="modal-overlay open">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">SHADOW PROTOCOL // PHANTOM MAINFRAME</div>
+          <div style="font-size: 11px; color: var(--neon-cyan);">SECURE INFILTRATION SYSTEM</div>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
+            Megacorporation <strong>NEXUS DYNAMICS</strong> has initiated deployment of 'ORION'—an autonomous rogue AI designed for global surveillance and kinetic subjugation.<br><br>
+            As elite operative <strong>PHANTOM</strong>, you must breach their 10-tier headquarters tower from the subterranean depths to the rooftop helipad. Extract the root encryption cores, disable security grids, and escape undetected.
+          </p>
+
+          <div style="margin-top: 10px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan); margin-bottom: 8px;">CAMPAIGN SECTOR SELECT:</div>
+            <div id="level-select-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-reset-save" class="btn btn-secondary" style="font-size: 11px;">RESET DATA</button>
+          <button id="btn-open-shop" class="btn btn-secondary">CYBERWARE UPGRADES</button>
+          <button id="btn-start-mission" class="btn">COMMENCE OPERATION [ENTER]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Cyberware Upgrade Shop -->
+    <div id="modal-shop" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">BLACK-MARKET CYBERWARE CLINIC</div>
+          <div id="shop-credits-display" style="color: var(--neon-amber); font-weight: bold;">CREDITS: 0 CR</div>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 12px; color: #94a3b8;">Acquire tactical neural and bio-mechanical augmentations using extracted corporate bounty credits.</p>
+          <div id="shop-upgrade-list" class="upgrade-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-close-shop" class="btn">CONFIRM & EXIT</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Mission Debrief (Results) -->
+    <div id="modal-debrief" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">MISSION DEBRIEF // EXTRACTION SUCCESS</div>
+          <div id="debrief-floor-name" style="color: var(--neon-green); font-weight: bold;">FLOOR 01</div>
+        </div>
+        <div class="modal-body">
+          <div id="debrief-rank" class="rank-display rank-S">RANK S</div>
+          <table class="stats-table">
+            <tr>
+              <td>Base Operation Bounty</td>
+              <td id="stat-base-bounty">+500 CR</td>
+            </tr>
+            <tr>
+              <td>Ghost Operative (Zero Kills / Pure Stealth)</td>
+              <td id="stat-ghost-bonus">+400 CR</td>
+            </tr>
+            <tr>
+              <td>Shadow Phantom (Zero Alarms Raised)</td>
+              <td id="stat-shadow-bonus">+500 CR</td>
+            </tr>
+            <tr>
+              <td>Takedowns Executed</td>
+              <td id="stat-takedowns">0</td>
+            </tr>
+            <tr>
+              <td>Time Elapsed</td>
+              <td id="stat-time">00:45</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--neon-cyan);">
+              <td style="color: var(--neon-amber);">Total Credits Earned</td>
+              <td id="stat-total-credits" style="color: var(--neon-amber); font-size: 16px;">+1,400 CR</td>
+            </tr>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-debrief-shop" class="btn btn-secondary">UPGRADES</button>
+          <button id="btn-next-mission" class="btn">ASCEND TO NEXT FLOOR [ENTER]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Game Over -->
+    <div id="modal-gameover" class="modal-overlay">
+      <div class="modal-box" style="border-color: var(--neon-red);">
+        <div class="modal-header" style="background: rgba(255, 42, 85, 0.15); border-bottom-color: var(--neon-red);">
+          <div class="modal-title" style="color: var(--neon-red);">SIGNAL TERMINATED // AGENT COMPROMISED</div>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 14px; color: #e2e8f0; line-height: 1.6;">
+            Corporate security overwhelmed your bio-signatures. The Orion AI core remains locked behind corporate firewalls.
+          </p>
+          <div style="font-size: 12px; color: #a0aec0; margin-top: 10px;">
+            Tip: Use <strong>[WASD]</strong> to sneak silently, throw <strong>Noisemakers [2]</strong> to redirect patrols, or overload the <strong>Power Breakers [H]</strong> to initiate a 25-second blackout.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-retry-mission" class="btn btn-danger">REBOOT SIMULATION [ENTER]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Pause Menu -->
+    <div id="modal-pause" class="modal-overlay">
+      <div class="modal-box" style="width: 500px;">
+        <div class="modal-header">
+          <div class="modal-title">TACTICAL PAUSE</div>
+          <div style="font-size: 11px; color: var(--neon-cyan);">LINK SUSPENDED</div>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 13px; color: #a0aec0; line-height: 1.6;">
+            Operation is temporarily held. Assess current sector conditions before resuming infiltration.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+            <button id="btn-pause-resume" class="btn">RESUME INFILTRATION [ESC]</button>
+            <button id="btn-pause-retry" class="btn btn-secondary">RESTART CURRENT FLOOR</button>
+            <button id="btn-pause-exit" class="btn btn-danger">ABORT TO MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Campaign Victory / Ending -->
+    <div id="modal-victory" class="modal-overlay">
+      <div class="modal-box" style="border-color: #ffd700; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);">
+        <div class="modal-header" style="background: rgba(255, 215, 0, 0.1); border-bottom-color: #ffd700;">
+          <div class="modal-title" style="color: #ffd700;">OPERATION COMPLETE // ORION AI NEUTRALIZED</div>
+        </div>
+        <div class="modal-body">
+          <div style="font-size: 14px; color: #fff; line-height: 1.8; text-align: center;">
+            <div style="font-size: 42px; margin-bottom: 10px;">🚁✨🏆</div>
+            The VTOL gunship banks sharply away from the Nexus Tower apex.<br>
+            With the Orion root encryption core secured in your drive, the syndicate's global panopticon is permanently dismantled.<br>
+            <strong>Agent Phantom, you are a true ghost.</strong>
+          </div>
+          <div style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 4px; border: 1px solid rgba(255,215,0,0.3); text-align: center;">
+            <div style="font-size: 12px; color: #ffd700; font-weight: bold; margin-bottom: 5px;">MISSION MASTER RATING</div>
+            <div id="victory-stats" style="font-size: 14px; color: #e2e8f0;">All 10 Sectors Successfully Cleared</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-victory-main" class="btn" style="border-color: #ffd700; color: #ffd700;">RETURN TO SECTOR SELECTION</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. WEB AUDIO API SYNTHESIZER (ZERO EXTERNAL ASSETS)
+       ========================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.heartbeatOsc = null;
+        this.sirenOsc = null;
+        this.sirenGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (!this.enabled && this.sirenOsc) {
+          this.stopSiren();
+        }
+        return this.enabled;
+      }
+
+      playFootstep() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.05);
+      }
+
+      playHeartbeat() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(65, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.18);
+      }
+
+      playTakedown() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+      }
+
+      playDart() {
+        if (!this.enabled || !this.ctx) return;
+        // White noise puff
+        const bufferSize = this.ctx.sampleRate * 0.08;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1800;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+      }
+
+      playSpark() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800 + Math.random() * 800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+      }
+
+      playHackTick() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900 + Math.random() * 300, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.04);
+      }
+
+      playHackSuccess() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.08);
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.08 + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + i * 0.08);
+          osc.stop(this.ctx.currentTime + i * 0.08 + 0.3);
+        });
+      }
+
+      playDecoy() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime + 0.06);
+        osc.frequency.setValueAtTime(1500, this.ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+      }
+
+      playSmoke() {
+        if (!this.enabled || !this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 0.4;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.4);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+      }
+
+      playCloak() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1400, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      }
+
+      startSiren() {
+        if (!this.enabled || !this.ctx || this.sirenOsc) return;
+        this.sirenOsc = this.ctx.createOscillator();
+        this.sirenGain = this.ctx.createGain();
+        this.sirenOsc.type = 'sawtooth';
+        this.sirenOsc.frequency.setValueAtTime(650, this.ctx.currentTime);
+        
+        // LFO for wailing siren
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        lfo.frequency.value = 1.5;
+        lfoGain.gain.value = 250;
+        lfo.connect(this.sirenOsc.frequency);
+        lfo.start();
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1400;
+
+        this.sirenGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        this.sirenOsc.connect(filter);
+        filter.connect(this.sirenGain);
+        this.sirenGain.connect(this.ctx.destination);
+        this.sirenOsc.start();
+      }
+
+      stopSiren() {
+        if (this.sirenOsc) {
+          try {
+            this.sirenGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
+            this.sirenOsc.stop(this.ctx.currentTime + 0.2);
+          } catch(e){}
+          this.sirenOsc = null;
+          this.sirenGain = null;
+        }
+      }
+    }
+
+    /* ==========================================================================
+       2. PERSISTENCE & UPGRADE SHOP SYSTEM (LOCALSTORAGE)
+       ========================================================================== */
+    const UPGRADES_DEF = [
+      {
+        id: 'speed_legs',
+        name: 'Cyber-Sprint Legs',
+        cost: 800,
+        desc: 'Increases tactical sneak and sprint velocities by +25%.'
+      },
+      {
+        id: 'silent_soles',
+        name: 'Silent Padded Soles',
+        cost: 1000,
+        desc: 'Reduces sprint noise wave propagation radius by 55%.'
+      },
+      {
+        id: 'thermal_vision',
+        name: 'Thermal Ocular Implant',
+        cost: 1200,
+        desc: 'Renders silhouettes and vision arcs of all guards through walls.'
+      },
+      {
+        id: 'neural_clock',
+        name: 'Neural Overclock',
+        cost: 1100,
+        desc: 'Reduces mainframe and terminal hacking time by 40% (5s -> 3s).'
+      },
+      {
+        id: 'cloak_battery',
+        name: 'Nano Cloak Capacitor',
+        cost: 1400,
+        desc: 'Extends Optical Camo duration from 5 seconds to 9 seconds.'
+      },
+      {
+        id: 'ammo_pouch',
+        name: 'Expanded Dart Holster',
+        cost: 900,
+        desc: 'Increases starting Tranq Darts from 2 to 4 each mission.'
+      }
+    ];
+
+    class SaveManager {
+      constructor() {
+        this.key = 'SHADOW_PROTOCOL_SAVE_DATA_V1';
+        this.data = this.load();
+      }
+
+      load() {
+        try {
+          const raw = localStorage.getItem(this.key);
+          if (raw) return JSON.parse(raw);
+        } catch(e) {}
+        return {
+          unlockedFloor: 1,
+          credits: 500,
+          upgrades: {},
+          ranks: {},
+          totalUndetected: 0
+        };
+      }
+
+      save() {
+        try {
+          localStorage.setItem(this.key, JSON.stringify(this.data));
+        } catch(e) {}
+      }
+
+      hasUpgrade(id) {
+        return !!this.data.upgrades[id];
+      }
+
+      buyUpgrade(id) {
+        const item = UPGRADES_DEF.find(u => u.id === id);
+        if (!item || this.data.credits < item.cost || this.hasUpgrade(id)) return false;
+        this.data.credits -= item.cost;
+        this.data.upgrades[id] = true;
+        this.save();
+        return true;
+      }
+
+      completeFloor(floorNum, creditsEarned, rank) {
+        this.data.credits += creditsEarned;
+        if (floorNum >= this.data.unlockedFloor && this.data.unlockedFloor < 10) {
+          this.data.unlockedFloor = floorNum + 1;
+        }
+        if (!this.data.ranks[floorNum] || rank === 'S' || (rank === 'A' && this.data.ranks[floorNum] !== 'S')) {
+          this.data.ranks[floorNum] = rank;
+        }
+        this.save();
+      }
+
+      reset() {
+        this.data = {
+          unlockedFloor: 1,
+          credits: 500,
+          upgrades: {},
+          ranks: {},
+          totalUndetected: 0
+        };
+        this.save();
+      }
+    }
+
+    /* ==========================================================================
+       3. RAYCASTING VISIBILITY & GEOMETRY UTILITIES
+       ========================================================================== */
+    function lineIntersection(p1, p2, p3, p4) {
+      const denom = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+      if (denom === 0) return null;
+      const ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denom;
+      const ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denom;
+      if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
+        return {
+          x: p1.x + ua * (p2.x - p1.x),
+          y: p1.y + ua * (p2.y - p1.y),
+          dist: ua
+        };
+      }
+      return null;
+    }
+
+    function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
+      const closestX = Math.max(rx, Math.min(cx, rx + rw));
+      const closestY = Math.max(ry, Math.min(cy, ry + rh));
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return (dx * dx + dy * dy) < (radius * radius);
+    }
+
+    function dist(x1, y1, x2, y2) {
+      return Math.hypot(x2 - x1, y2 - y1);
+    }
+
+    /* ==========================================================================
+       4. 10 INFILTRATION CAMPAIGN LEVELS DEFINITION
+       ========================================================================== */
+    const LEVEL_CONFIGS = [
+      {
+        floor: 1,
+        title: "FLOOR 01 // B2 SUBTERRANEAN PARKING",
+        briefing: "Phantom, security is sparse in the logistics bays. Keep low, observe patrol timing, and breach the B2 local node.",
+        mapW: 1400, mapH: 1000,
+        playerStart: { x: 120, y: 500 },
+        exitZone: { x: 1280, y: 500, w: 70, h: 80 },
+        mainframe: { x: 1000, y: 250 },
+        breaker: { x: 500, y: 880 },
+        terminal: { x: 750, y: 700 },
+        walls: [
+          // Outer perimeter
+          { x: 40, y: 40, w: 1320, h: 20 },
+          { x: 40, y: 940, w: 1320, h: 20 },
+          { x: 40, y: 40, w: 20, h: 920 },
+          { x: 1340, y: 40, w: 20, h: 920 },
+          // Interior pillars & partitions
+          { x: 320, y: 150, w: 30, h: 300 },
+          { x: 320, y: 550, w: 30, h: 300 },
+          { x: 680, y: 200, w: 30, h: 320 },
+          { x: 680, y: 620, w: 250, h: 30 },
+          { x: 920, y: 120, w: 30, h: 360 },
+          { x: 1100, y: 400, w: 30, h: 380 }
+        ],
+        doors: [
+          { x: 680, y: 520, w: 30, h: 80, open: false, locked: false }
+        ],
+        vents: [
+          { x: 260, y: 100, w: 160, h: 30, id: 'v1' },
+          { x: 420, y: 100, w: 30, h: 220, id: 'v2' }
+        ],
+        shadows: [
+          { x: 160, y: 120, w: 140, h: 140 },
+          { x: 800, y: 760, w: 200, h: 140 },
+          { x: 1020, y: 650, w: 180, h: 120 }
+        ],
+        guards: [
+          {
+            x: 480, y: 350,
+            waypoints: [{ x: 480, y: 220 }, { x: 480, y: 500 }],
+            fov: 75, range: 200, type: 'guard'
+          },
+          {
+            x: 880, y: 680,
+            waypoints: [{ x: 780, y: 680 }, { x: 1050, y: 680 }],
+            fov: 75, range: 210, type: 'guard'
+          }
+        ],
+        cameras: [
+          { x: 680, y: 70, baseAngle: 90, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 240 }
+        ],
+        drones: []
+      },
+      {
+        floor: 2,
+        title: "FLOOR 02 // B1 LOGISTICS & VENTILATION",
+        briefing: "CCTV grid is active. Infiltrate via the maintenance air ducts or trigger a blackout via the breaker.",
+        mapW: 1600, mapH: 1100,
+        playerStart: { x: 100, y: 920 },
+        exitZone: { x: 1480, y: 180, w: 80, h: 80 },
+        mainframe: { x: 1350, y: 880 },
+        breaker: { x: 300, y: 200 },
+        terminal: { x: 850, y: 550 },
+        walls: [
+          { x: 40, y: 40, w: 1520, h: 20 },
+          { x: 40, y: 1040, w: 1520, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1020 },
+          { x: 1540, y: 40, w: 20, h: 1020 },
+          // Rooms
+          { x: 250, y: 100, w: 20, h: 450 },
+          { x: 250, y: 550, w: 320, h: 20 },
+          { x: 550, y: 250, w: 20, h: 320 },
+          { x: 750, y: 200, w: 20, h: 500 },
+          { x: 750, y: 700, w: 400, h: 20 },
+          { x: 1150, y: 350, w: 20, h: 520 },
+          { x: 1150, y: 350, w: 300, h: 20 }
+        ],
+        doors: [
+          { x: 400, y: 550, w: 80, h: 20, open: false, locked: false },
+          { x: 920, y: 700, w: 80, h: 20, open: false, locked: true }
+        ],
+        vents: [
+          { x: 80, y: 80, w: 350, h: 25, id: 'v1' },
+          { x: 430, y: 80, w: 25, h: 350, id: 'v2' }
+        ],
+        shadows: [
+          { x: 300, y: 700, w: 220, h: 200 },
+          { x: 820, y: 250, w: 250, h: 180 }
+        ],
+        guards: [
+          {
+            x: 420, y: 750,
+            waypoints: [{ x: 350, y: 750 }, { x: 620, y: 750 }],
+            fov: 75, range: 210, type: 'guard'
+          },
+          {
+            x: 950, y: 450,
+            waypoints: [{ x: 950, y: 300 }, { x: 950, y: 620 }],
+            fov: 80, range: 220, type: 'guard'
+          },
+          {
+            x: 1300, y: 600,
+            waypoints: [{ x: 1220, y: 600 }, { x: 1460, y: 600 }],
+            fov: 80, range: 220, type: 'guard'
+          }
+        ],
+        cameras: [
+          { x: 750, y: 150, baseAngle: 90, sweepRange: 50, sweepSpeed: 0.9, fov: 60, range: 250 },
+          { x: 1150, y: 340, baseAngle: 270, sweepRange: 45, sweepSpeed: 0.7, fov: 60, range: 240 }
+        ],
+        drones: []
+      },
+      {
+        floor: 3,
+        title: "FLOOR 03 // 01F SECURITY SCREENING DESK",
+        briefing: "First floor lobby. Multi-angle cameras cover the security turnstiles. Disable them at the sub-terminal.",
+        mapW: 1600, mapH: 1200,
+        playerStart: { x: 100, y: 600 },
+        exitZone: { x: 1480, y: 600, w: 80, h: 90 },
+        mainframe: { x: 800, y: 200 },
+        breaker: { x: 200, y: 200 },
+        terminal: { x: 800, y: 950 },
+        walls: [
+          { x: 40, y: 40, w: 1520, h: 20 },
+          { x: 40, y: 1140, w: 1520, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1540, y: 40, w: 20, h: 1120 },
+          // Central lobby barriers
+          { x: 400, y: 200, w: 20, h: 800 },
+          { x: 650, y: 350, w: 300, h: 20 },
+          { x: 650, y: 750, w: 300, h: 20 },
+          { x: 1150, y: 200, w: 20, h: 800 }
+        ],
+        doors: [
+          { x: 400, y: 550, w: 20, h: 100, open: false, locked: true },
+          { x: 1150, y: 550, w: 20, h: 100, open: false, locked: true }
+        ],
+        vents: [
+          { x: 350, y: 1000, w: 120, h: 25, id: 'v1' },
+          { x: 1100, y: 1000, w: 120, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 120, y: 120, w: 200, h: 200 },
+          { x: 1250, y: 120, w: 200, h: 250 },
+          { x: 1250, y: 800, w: 200, h: 250 }
+        ],
+        guards: [
+          { x: 250, y: 450, waypoints: [{ x: 250, y: 300 }, { x: 250, y: 850 }], fov: 75, range: 210, type: 'guard' },
+          { x: 750, y: 550, waypoints: [{ x: 550, y: 550 }, { x: 950, y: 550 }], fov: 80, range: 220, type: 'guard' },
+          { x: 1350, y: 450, waypoints: [{ x: 1350, y: 250 }, { x: 1350, y: 900 }], fov: 75, range: 210, type: 'guard' }
+        ],
+        cameras: [
+          { x: 410, y: 220, baseAngle: 45, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 260 },
+          { x: 1140, y: 220, baseAngle: 135, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 260 }
+        ],
+        drones: []
+      },
+      {
+        floor: 4,
+        title: "FLOOR 04 // 03F CORPORATE CUBICLES",
+        briefing: "A labyrinth of office partitions. Sound echoes easily here. Use noisemaker decoys to divert roving guards.",
+        mapW: 1600, mapH: 1200,
+        playerStart: { x: 120, y: 100 },
+        exitZone: { x: 1450, y: 1050, w: 80, h: 80 },
+        mainframe: { x: 1400, y: 180 },
+        breaker: { x: 120, y: 800 },
+        terminal: { x: 800, y: 600 },
+        walls: [
+          { x: 40, y: 40, w: 1520, h: 20 },
+          { x: 40, y: 1140, w: 1520, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1540, y: 40, w: 20, h: 1120 },
+          // Cubicle maze walls
+          { x: 300, y: 150, w: 20, h: 400 },
+          { x: 300, y: 680, w: 20, h: 350 },
+          { x: 500, y: 350, w: 350, h: 20 },
+          { x: 500, y: 800, w: 400, h: 20 },
+          { x: 950, y: 150, w: 20, h: 500 },
+          { x: 1050, y: 550, w: 350, h: 20 },
+          { x: 1250, y: 700, w: 20, h: 350 }
+        ],
+        doors: [
+          { x: 650, y: 350, w: 80, h: 20, open: false, locked: false },
+          { x: 1050, y: 700, w: 80, h: 20, open: false, locked: true }
+        ],
+        vents: [
+          { x: 320, y: 80, w: 250, h: 20, id: 'v1' },
+          { x: 1200, y: 1080, w: 150, h: 20, id: 'v2' }
+        ],
+        shadows: [
+          { x: 150, y: 350, w: 120, h: 250 },
+          { x: 600, y: 450, w: 250, h: 150 },
+          { x: 1050, y: 250, w: 200, h: 200 }
+        ],
+        guards: [
+          { x: 450, y: 250, waypoints: [{ x: 350, y: 250 }, { x: 800, y: 250 }], fov: 75, range: 200, type: 'guard' },
+          { x: 700, y: 700, waypoints: [{ x: 700, y: 600 }, { x: 700, y: 950 }], fov: 75, range: 200, type: 'guard' },
+          { x: 1100, y: 400, waypoints: [{ x: 1020, y: 400 }, { x: 1380, y: 400 }], fov: 80, range: 220, type: 'guard' },
+          { x: 1150, y: 900, waypoints: [{ x: 1000, y: 900 }, { x: 1400, y: 900 }], fov: 75, range: 210, type: 'guard' }
+        ],
+        cameras: [
+          { x: 950, y: 140, baseAngle: 270, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }
+        ],
+        drones: []
+      },
+      {
+        floor: 5,
+        title: "FLOOR 05 // 05F BIO-ROBOTICS LAB",
+        briefing: "Warning: Autonomous patrol drones detected. They have full 360-degree audio sensors. Silent movement is mandatory.",
+        mapW: 1700, mapH: 1200,
+        playerStart: { x: 100, y: 1050 },
+        exitZone: { x: 1550, y: 150, w: 90, h: 90 },
+        mainframe: { x: 1450, y: 950 },
+        breaker: { x: 150, y: 250 },
+        terminal: { x: 900, y: 600 },
+        walls: [
+          { x: 40, y: 40, w: 1620, h: 20 },
+          { x: 40, y: 1140, w: 1620, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1640, y: 40, w: 20, h: 1120 },
+          // Cleanroom chambers
+          { x: 350, y: 150, w: 20, h: 600 },
+          { x: 350, y: 750, w: 400, h: 20 },
+          { x: 750, y: 350, w: 20, h: 420 },
+          { x: 1000, y: 150, w: 20, h: 700 },
+          { x: 1000, y: 850, w: 450, h: 20 },
+          { x: 1350, y: 350, w: 20, h: 520 }
+        ],
+        doors: [
+          { x: 500, y: 750, w: 80, h: 20, open: false, locked: false },
+          { x: 1000, y: 500, w: 20, h: 80, open: false, locked: true },
+          { x: 1350, y: 650, w: 20, h: 80, open: false, locked: true }
+        ],
+        vents: [
+          { x: 80, y: 80, w: 320, h: 25, id: 'v1' },
+          { x: 1050, y: 100, w: 250, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 400, y: 200, w: 300, h: 250 },
+          { x: 1100, y: 650, w: 200, h: 160 }
+        ],
+        guards: [
+          { x: 200, y: 500, waypoints: [{ x: 200, y: 350 }, { x: 200, y: 750 }], fov: 75, range: 200, type: 'guard' },
+          { x: 850, y: 300, waypoints: [{ x: 800, y: 300 }, { x: 950, y: 300 }], fov: 80, range: 210, type: 'guard' },
+          { x: 1500, y: 550, waypoints: [{ x: 1450, y: 350 }, { x: 1450, y: 800 }], fov: 80, range: 220, type: 'guard' }
+        ],
+        cameras: [
+          { x: 760, y: 360, baseAngle: 180, sweepRange: 45, sweepSpeed: 0.8, fov: 60, range: 240 }
+        ],
+        drones: [
+          {
+            x: 550, y: 450,
+            waypoints: [{ x: 450, y: 450 }, { x: 680, y: 450 }],
+            angle: 0, range: 180
+          },
+          {
+            x: 1180, y: 450,
+            waypoints: [{ x: 1080, y: 450 }, { x: 1280, y: 450 }],
+            angle: 0, range: 180
+          }
+        ]
+      },
+      {
+        floor: 6,
+        title: "FLOOR 06 // 07F DATA VAULT ARCHIVE",
+        briefing: "Tri-camera setup scanning the central vault corridor. Cut power before retrieving the classified drives.",
+        mapW: 1800, mapH: 1200,
+        playerStart: { x: 100, y: 600 },
+        exitZone: { x: 1680, y: 600, w: 80, h: 90 },
+        mainframe: { x: 900, y: 600 },
+        breaker: { x: 350, y: 150 },
+        terminal: { x: 1400, y: 1000 },
+        walls: [
+          { x: 40, y: 40, w: 1720, h: 20 },
+          { x: 40, y: 1140, w: 1720, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1740, y: 40, w: 20, h: 1120 },
+          // Central Vault Box
+          { x: 750, y: 450, w: 300, h: 20 },
+          { x: 750, y: 730, w: 300, h: 20 },
+          { x: 750, y: 450, w: 20, h: 300 },
+          { x: 1030, y: 450, w: 20, h: 300 },
+          // Outer partitions
+          { x: 400, y: 250, w: 20, h: 700 },
+          { x: 1350, y: 250, w: 20, h: 700 }
+        ],
+        doors: [
+          { x: 750, y: 560, w: 20, h: 80, open: false, locked: true },
+          { x: 1030, y: 560, w: 20, h: 80, open: false, locked: true }
+        ],
+        vents: [
+          { x: 100, y: 150, w: 280, h: 25, id: 'v1' },
+          { x: 1400, y: 150, w: 280, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 150, y: 200, w: 200, h: 200 },
+          { x: 1450, y: 200, w: 200, h: 200 },
+          { x: 500, y: 500, w: 200, h: 200 },
+          { x: 1100, y: 500, w: 200, h: 200 }
+        ],
+        guards: [
+          { x: 250, y: 400, waypoints: [{ x: 250, y: 250 }, { x: 250, y: 900 }], fov: 75, range: 200, type: 'guard' },
+          { x: 580, y: 350, waypoints: [{ x: 500, y: 350 }, { x: 700, y: 350 }], fov: 75, range: 210, type: 'guard' },
+          { x: 1200, y: 850, waypoints: [{ x: 1100, y: 850 }, { x: 1300, y: 850 }], fov: 75, range: 210, type: 'guard' },
+          { x: 1550, y: 700, waypoints: [{ x: 1550, y: 350 }, { x: 1550, y: 950 }], fov: 80, range: 220, type: 'guard' }
+        ],
+        cameras: [
+          { x: 760, y: 440, baseAngle: 315, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 230 },
+          { x: 1020, y: 440, baseAngle: 225, sweepRange: 40, sweepSpeed: 0.8, fov: 60, range: 230 },
+          { x: 900, y: 740, baseAngle: 90, sweepRange: 50, sweepSpeed: 0.9, fov: 65, range: 240 }
+        ],
+        drones: [
+          { x: 900, y: 250, waypoints: [{ x: 750, y: 250 }, { x: 1050, y: 250 }], angle: 0, range: 170 }
+        ]
+      },
+      {
+        floor: 7,
+        title: "FLOOR 07 // 09F VIP EXECUTIVE SUITES",
+        briefing: "Elite Enforcers on patrol. Their audio sensitivity and vision range are heavily augmented. Do not approach from the front.",
+        mapW: 1800, mapH: 1200,
+        playerStart: { x: 100, y: 150 },
+        exitZone: { x: 1650, y: 1050, w: 90, h: 90 },
+        mainframe: { x: 1500, y: 250 },
+        breaker: { x: 900, y: 1100 },
+        terminal: { x: 300, y: 950 },
+        walls: [
+          { x: 40, y: 40, w: 1720, h: 20 },
+          { x: 40, y: 1140, w: 1720, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1740, y: 40, w: 20, h: 1120 },
+          // Suite corridors
+          { x: 350, y: 150, w: 20, h: 700 },
+          { x: 350, y: 850, w: 450, h: 20 },
+          { x: 800, y: 350, w: 20, h: 520 },
+          { x: 800, y: 350, w: 450, h: 20 },
+          { x: 1250, y: 350, w: 20, h: 650 }
+        ],
+        doors: [
+          { x: 350, y: 500, w: 20, h: 80, open: false, locked: false },
+          { x: 600, y: 850, w: 80, h: 20, open: false, locked: true },
+          { x: 1250, y: 700, w: 20, h: 80, open: false, locked: true }
+        ],
+        vents: [
+          { x: 150, y: 900, w: 25, h: 200, id: 'v1' },
+          { x: 850, y: 1000, w: 200, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 120, y: 300, w: 180, h: 300 },
+          { x: 500, y: 500, w: 200, h: 200 },
+          { x: 950, y: 500, w: 250, h: 250 }
+        ],
+        guards: [
+          { x: 220, y: 650, waypoints: [{ x: 220, y: 400 }, { x: 220, y: 850 }], fov: 85, range: 240, type: 'elite' },
+          { x: 550, y: 450, waypoints: [{ x: 450, y: 450 }, { x: 720, y: 450 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1050, y: 650, waypoints: [{ x: 900, y: 650 }, { x: 1180, y: 650 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1450, y: 500, waypoints: [{ x: 1450, y: 350 }, { x: 1450, y: 900 }], fov: 85, range: 240, type: 'elite' }
+        ],
+        cameras: [
+          { x: 810, y: 360, baseAngle: 90, sweepRange: 50, sweepSpeed: 1.0, fov: 65, range: 250 },
+          { x: 1260, y: 360, baseAngle: 0, sweepRange: 45, sweepSpeed: 0.8, fov: 65, range: 250 }
+        ],
+        drones: [
+          { x: 1550, y: 800, waypoints: [{ x: 1400, y: 800 }, { x: 1650, y: 800 }], angle: 0, range: 190 }
+        ]
+      },
+      {
+        floor: 8,
+        title: "FLOOR 08 // 12F CYBER DEFENSE MATRIX",
+        briefing: "Two terminals require sequential synchronization. Smoke grenades provide essential cover in the main artery.",
+        mapW: 1900, mapH: 1200,
+        playerStart: { x: 120, y: 600 },
+        exitZone: { x: 1750, y: 600, w: 90, h: 90 },
+        mainframe: { x: 1500, y: 600 },
+        breaker: { x: 300, y: 150 },
+        terminal: { x: 950, y: 1050 },
+        walls: [
+          { x: 40, y: 40, w: 1820, h: 20 },
+          { x: 40, y: 1140, w: 1820, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1120 },
+          { x: 1840, y: 40, w: 20, h: 1120 },
+          // Heavy matrix dividers
+          { x: 350, y: 200, w: 30, h: 800 },
+          { x: 700, y: 150, w: 30, h: 500 },
+          { x: 700, y: 750, w: 30, h: 400 },
+          { x: 1150, y: 150, w: 30, h: 450 },
+          { x: 1150, y: 700, w: 30, h: 450 },
+          { x: 1400, y: 350, w: 30, h: 500 }
+        ],
+        doors: [
+          { x: 350, y: 550, w: 30, h: 100, open: false, locked: false },
+          { x: 700, y: 650, w: 30, h: 100, open: false, locked: true },
+          { x: 1150, y: 600, w: 30, h: 100, open: false, locked: true }
+        ],
+        vents: [
+          { x: 420, y: 100, w: 250, h: 25, id: 'v1' },
+          { x: 1200, y: 100, w: 250, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 450, y: 300, w: 200, h: 300 },
+          { x: 850, y: 300, w: 200, h: 300 },
+          { x: 1250, y: 800, w: 150, h: 250 }
+        ],
+        guards: [
+          { x: 520, y: 500, waypoints: [{ x: 520, y: 250 }, { x: 520, y: 850 }], fov: 80, range: 220, type: 'guard' },
+          { x: 920, y: 400, waypoints: [{ x: 800, y: 400 }, { x: 1050, y: 400 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1280, y: 450, waypoints: [{ x: 1280, y: 250 }, { x: 1280, y: 750 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1600, y: 700, waypoints: [{ x: 1500, y: 700 }, { x: 1750, y: 700 }], fov: 80, range: 220, type: 'guard' }
+        ],
+        cameras: [
+          { x: 710, y: 160, baseAngle: 45, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 250 },
+          { x: 1160, y: 160, baseAngle: 45, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 250 }
+        ],
+        drones: [
+          { x: 950, y: 750, waypoints: [{ x: 800, y: 750 }, { x: 1050, y: 750 }], angle: 0, range: 190 },
+          { x: 1600, y: 350, waypoints: [{ x: 1500, y: 350 }, { x: 1750, y: 350 }], angle: 0, range: 190 }
+        ]
+      },
+      {
+        floor: 9,
+        title: "FLOOR 09 // 15F ORION AI CORE SANCTUM",
+        briefing: "The central intelligence hub. You must hold position for 5 seconds while ripping Orion's encryption keys.",
+        mapW: 2000, mapH: 1300,
+        playerStart: { x: 150, y: 650 },
+        exitZone: { x: 1850, y: 650, w: 90, h: 100 },
+        mainframe: { x: 1000, y: 650 },
+        breaker: { x: 1000, y: 150 },
+        terminal: { x: 1000, y: 1150 },
+        walls: [
+          { x: 40, y: 40, w: 1920, h: 20 },
+          { x: 40, y: 1240, w: 1920, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1220 },
+          { x: 1940, y: 40, w: 20, h: 1220 },
+          // Octagonal core baffle walls
+          { x: 500, y: 350, w: 30, h: 600 },
+          { x: 1500, y: 350, w: 30, h: 600 },
+          { x: 750, y: 250, w: 500, h: 30 },
+          { x: 750, y: 1020, w: 500, h: 30 },
+          // Core pillars
+          { x: 850, y: 500, w: 40, h: 40 },
+          { x: 1150, y: 500, w: 40, h: 40 },
+          { x: 850, y: 760, w: 40, h: 40 },
+          { x: 1150, y: 760, w: 40, h: 40 }
+        ],
+        doors: [
+          { x: 500, y: 600, w: 30, h: 100, open: false, locked: true },
+          { x: 1500, y: 600, w: 30, h: 100, open: false, locked: true }
+        ],
+        vents: [
+          { x: 350, y: 100, w: 200, h: 25, id: 'v1' },
+          { x: 1450, y: 100, w: 200, h: 25, id: 'v2' }
+        ],
+        shadows: [
+          { x: 600, y: 400, w: 180, h: 200 },
+          { x: 1250, y: 400, w: 180, h: 200 },
+          { x: 600, y: 750, w: 180, h: 200 },
+          { x: 1250, y: 750, w: 180, h: 200 }
+        ],
+        guards: [
+          { x: 300, y: 450, waypoints: [{ x: 300, y: 300 }, { x: 300, y: 950 }], fov: 85, range: 240, type: 'elite' },
+          { x: 800, y: 400, waypoints: [{ x: 700, y: 400 }, { x: 950, y: 400 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1200, y: 900, waypoints: [{ x: 1050, y: 900 }, { x: 1300, y: 900 }], fov: 85, range: 240, type: 'elite' },
+          { x: 1700, y: 650, waypoints: [{ x: 1700, y: 400 }, { x: 1700, y: 900 }], fov: 85, range: 240, type: 'elite' }
+        ],
+        cameras: [
+          { x: 760, y: 260, baseAngle: 45, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 260 },
+          { x: 1240, y: 260, baseAngle: 135, sweepRange: 45, sweepSpeed: 0.9, fov: 65, range: 260 },
+          { x: 1000, y: 1010, baseAngle: 270, sweepRange: 55, sweepSpeed: 1.0, fov: 70, range: 270 }
+        ],
+        drones: [
+          { x: 1000, y: 450, waypoints: [{ x: 750, y: 450 }, { x: 1250, y: 450 }], angle: 0, range: 200 },
+          { x: 1000, y: 850, waypoints: [{ x: 750, y: 850 }, { x: 1250, y: 850 }], angle: 0, range: 200 }
+        ]
+      },
+      {
+        floor: 10,
+        title: "FLOOR 10 // ROOFTOP SKY-PAD APEX",
+        briefing: "Extraction VTOL inbound on the pad! Neutralize or evade the rooftop strike team and breach the extraction ship.",
+        mapW: 2000, mapH: 1400,
+        playerStart: { x: 150, y: 1250 },
+        exitZone: { x: 1000, y: 250, w: 160, h: 160 },
+        mainframe: { x: 1000, y: 800 },
+        breaker: { x: 250, y: 350 },
+        terminal: { x: 1750, y: 350 },
+        walls: [
+          { x: 40, y: 40, w: 1920, h: 20 },
+          { x: 40, y: 1340, w: 1920, h: 20 },
+          { x: 40, y: 40, w: 20, h: 1320 },
+          { x: 1940, y: 40, w: 20, h: 1320 },
+          // Helipad structure boundaries & maintenance sheds
+          { x: 200, y: 500, w: 300, h: 25 },
+          { x: 500, y: 500, w: 25, h: 400 },
+          { x: 1500, y: 500, w: 300, h: 25 },
+          { x: 1475, y: 500, w: 25, h: 400 },
+          // Helipad blast walls
+          { x: 800, y: 150, w: 20, h: 300 },
+          { x: 1200, y: 150, w: 20, h: 300 },
+          { x: 700, y: 1050, w: 600, h: 25 }
+        ],
+        doors: [
+          { x: 350, y: 500, w: 80, h: 25, open: false, locked: false },
+          { x: 1600, y: 500, w: 80, h: 25, open: false, locked: false },
+          { x: 950, y: 1050, w: 100, h: 25, open: false, locked: true }
+        ],
+        vents: [
+          { x: 100, y: 200, w: 25, h: 300, id: 'v1' },
+          { x: 1850, y: 200, w: 25, h: 300, id: 'v2' }
+        ],
+        shadows: [
+          { x: 100, y: 600, w: 350, h: 250 },
+          { x: 1550, y: 600, w: 350, h: 250 },
+          { x: 750, y: 600, w: 500, h: 150 }
+        ],
+        guards: [
+          { x: 400, y: 350, waypoints: [{ x: 300, y: 350 }, { x: 700, y: 350 }], fov: 90, range: 250, type: 'elite' },
+          { x: 1600, y: 350, waypoints: [{ x: 1300, y: 350 }, { x: 1700, y: 350 }], fov: 90, range: 250, type: 'elite' },
+          { x: 750, y: 900, waypoints: [{ x: 600, y: 900 }, { x: 900, y: 900 }], fov: 90, range: 250, type: 'elite' },
+          { x: 1250, y: 900, waypoints: [{ x: 1100, y: 900 }, { x: 1400, y: 900 }], fov: 90, range: 250, type: 'elite' }
+        ],
+        cameras: [
+          { x: 810, y: 160, baseAngle: 0, sweepRange: 45, sweepSpeed: 0.9, fov: 70, range: 270 },
+          { x: 1190, y: 160, baseAngle: 180, sweepRange: 45, sweepSpeed: 0.9, fov: 70, range: 270 }
+        ],
+        drones: [
+          { x: 600, y: 650, waypoints: [{ x: 500, y: 650 }, { x: 900, y: 650 }], angle: 0, range: 200 },
+          { x: 1400, y: 650, waypoints: [{ x: 1100, y: 650 }, { x: 1500, y: 650 }], angle: 0, range: 200 }
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       5. MAIN ENGINE & AGENT SIMULATION
+       ========================================================================== */
+    class GameEngine {
+      constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.audio = new SoundEngine();
+        this.saveManager = new SaveManager();
+
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+
+        // Input
+        this.keys = {};
+        this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false, rightDown: false };
+        this.setupInputs();
+
+        // Game State
+        this.currentFloor = 1;
+        this.state = 'TITLE'; // TITLE, PLAYING, DEBRIEF, GAMEOVER, PAUSED
+        this.camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
+        this.levelTime = 0;
+        this.stats = { takedowns: 0, alarmsRaised: 0, kills: 0 };
+
+        // Level Entities
+        this.player = null;
+        this.walls = [];
+        this.doors = [];
+        this.vents = [];
+        this.shadows = [];
+        this.guards = [];
+        this.cameras = [];
+        this.drones = [];
+        this.projectiles = [];
+        this.smokeClouds = [];
+        this.noiseWaves = [];
+        this.particles = [];
+        this.mainframe = null;
+        this.breaker = null;
+        this.terminal = null;
+        this.exitZone = null;
+
+        // Blackout & Alarm
+        this.blackoutTimer = 0;
+        this.alarmLevel = 'NORMAL'; // NORMAL, SUSPICIOUS, ALARM
+        this.alarmTimer = 0;
+
+        // Interaction Prompt
+        this.currentPrompt = null;
+
+        // UI Binding
+        this.bindUI();
+        this.renderTitleLevels();
+        this.updateHUDStats();
+
+        // Main Loop
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
+      }
+
+      resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+      }
+
+      setupInputs() {
+        window.addEventListener('keydown', (e) => {
+          this.audio.init();
+          this.keys[e.code] = true;
+
+          if (e.code === 'KeyE') this.handleTakedown();
+          if (e.code === 'KeyG') this.handleDragBody();
+          if (e.code === 'Digit1') this.selectGadget(0);
+          if (e.code === 'Digit2') this.selectGadget(1);
+          if (e.code === 'Digit3') this.selectGadget(2);
+          if (e.code === 'Digit4') this.selectGadget(3);
+          if (e.code === 'KeyQ') this.triggerGadget();
+          if (e.code === 'Escape') this.togglePause();
+          if (e.code === 'Enter') {
+            if (this.state === 'TITLE') this.startLevel(this.currentFloor);
+            else if (this.state === 'DEBRIEF') this.nextLevel();
+            else if (this.state === 'GAMEOVER') this.startLevel(this.currentFloor);
+            else if (this.state === 'VICTORY') this.exitToTitle();
+          }
+        });
+
+        window.addEventListener('keyup', (e) => {
+          this.keys[e.code] = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          this.mouse.x = e.clientX;
+          this.mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+          this.audio.init();
+          if (e.button === 0) {
+            this.mouse.down = true;
+          } else if (e.button === 2) {
+            e.preventDefault();
+            this.triggerGadget();
+          }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+          if (e.button === 0) this.mouse.down = false;
+        });
+
+        window.addEventListener('contextmenu', (e) => e.preventDefault());
+      }
+
+      togglePause() {
+        if (this.state === 'PLAYING') {
+          this.state = 'PAUSED';
+          document.getElementById('modal-pause').classList.add('open');
+        } else if (this.state === 'PAUSED') {
+          this.state = 'PLAYING';
+          document.getElementById('modal-pause').classList.remove('open');
+        }
+      }
+
+      exitToTitle() {
+        this.state = 'TITLE';
+        this.audio.stopSiren();
+        document.getElementById('modal-pause').classList.remove('open');
+        document.getElementById('modal-victory').classList.remove('open');
+        document.getElementById('modal-debrief').classList.remove('open');
+        document.getElementById('modal-gameover').classList.remove('open');
+        document.getElementById('modal-title').classList.add('open');
+        this.renderTitleLevels();
+        this.updateHUDStats();
+      }
+
+      bindUI() {
+        document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+          const enabled = this.audio.toggle();
+          document.getElementById('btn-sound-toggle').innerText = `SFX: ${enabled ? 'ON' : 'OFF'}`;
+        });
+
+        document.getElementById('btn-start-mission').addEventListener('click', () => {
+          this.startLevel(this.currentFloor);
+        });
+
+        document.getElementById('btn-reset-save').addEventListener('click', () => {
+          if (confirm("Reset all operational progress and credits?")) {
+            this.saveManager.reset();
+            this.currentFloor = 1;
+            this.renderTitleLevels();
+            this.updateHUDStats();
+          }
+        });
+
+        document.getElementById('btn-open-shop').addEventListener('click', () => this.openShop());
+        document.getElementById('btn-close-shop').addEventListener('click', () => this.closeShop());
+        document.getElementById('btn-debrief-shop').addEventListener('click', () => {
+          document.getElementById('modal-debrief').classList.remove('open');
+          this.openShop();
+        });
+
+        document.getElementById('btn-next-mission').addEventListener('click', () => this.nextLevel());
+        document.getElementById('btn-retry-mission').addEventListener('click', () => this.startLevel(this.currentFloor));
+
+        // Pause menu buttons
+        document.getElementById('btn-pause-resume').addEventListener('click', () => this.togglePause());
+        document.getElementById('btn-pause-retry').addEventListener('click', () => {
+          document.getElementById('modal-pause').classList.remove('open');
+          this.startLevel(this.currentFloor);
+        });
+        document.getElementById('btn-pause-exit').addEventListener('click', () => this.exitToTitle());
+
+        // Victory button
+        document.getElementById('btn-victory-main').addEventListener('click', () => this.exitToTitle());
+
+        // Gadget bar slot click
+        document.querySelectorAll('.gadget-slot').forEach(slot => {
+          slot.addEventListener('click', () => {
+            const idx = parseInt(slot.dataset.gadget);
+            this.selectGadget(idx);
+          });
+        });
+      }
+
+      openShop() {
+        const modal = document.getElementById('modal-shop');
+        document.getElementById('shop-credits-display').innerText = `CREDITS: ${this.saveManager.data.credits} CR`;
+        const list = document.getElementById('shop-upgrade-list');
+        list.innerHTML = '';
+
+        UPGRADES_DEF.forEach(u => {
+          const installed = this.saveManager.hasUpgrade(u.id);
+          const card = document.createElement('div');
+          card.className = `upgrade-card ${installed ? 'installed' : ''}`;
+          card.innerHTML = `
+            <div>
+              <div class="upgrade-header">
+                <span class="upgrade-name">${u.name}</span>
+                <span class="upgrade-cost">${installed ? 'INSTALLED' : u.cost + ' CR'}</span>
+              </div>
+              <div class="upgrade-desc">${u.desc}</div>
+            </div>
+            ${!installed ? `<button class="btn btn-secondary" style="font-size: 11px; padding: 6px;" data-id="${u.id}">INSTALL</button>` : `<div style="font-size: 11px; color: var(--neon-green); font-weight: bold;">ONLINE</div>`}
+          `;
+
+          if (!installed) {
+            card.querySelector('button').addEventListener('click', () => {
+              if (this.saveManager.buyUpgrade(u.id)) {
+                this.audio.playHackSuccess();
+                this.openShop();
+                this.updateHUDStats();
+              } else {
+                alert("Insufficient corporate credits.");
+              }
+            });
+          }
+
+          list.appendChild(card);
+        });
+
+        modal.classList.add('open');
+      }
+
+      closeShop() {
+        document.getElementById('modal-shop').classList.remove('open');
+      }
+
+      renderTitleLevels() {
+        const grid = document.getElementById('level-select-grid');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+          const btn = document.createElement('button');
+          const unlocked = i <= this.saveManager.data.unlockedFloor;
+          const rank = this.saveManager.data.ranks[i] || '-';
+          btn.className = `btn ${unlocked ? (i === this.currentFloor ? '' : 'btn-secondary') : 'btn-secondary'}`;
+          btn.style.padding = '8px 4px';
+          btn.style.fontSize = '10px';
+          btn.style.opacity = unlocked ? '1' : '0.35';
+          btn.innerHTML = `F${i < 10 ? '0' + i : i}<br><span style="color:var(--neon-cyan)">[${rank}]</span>`;
+          if (unlocked) {
+            btn.addEventListener('click', () => {
+              this.currentFloor = i;
+              this.renderTitleLevels();
+            });
+          }
+          grid.appendChild(btn);
+        }
+      }
+
+      updateHUDStats() {
+        document.getElementById('credits-hud').innerText = `CREDITS: ${this.saveManager.data.credits} CR`;
+      }
+
+      /* ========================================================================
+         LEVEL INITIALIZATION
+         ======================================================================== */
+      startLevel(floorNum) {
+        this.currentFloor = floorNum;
+        const config = LEVEL_CONFIGS[floorNum - 1];
+
+        // Reset Modals
+        document.getElementById('modal-title').classList.remove('open');
+        document.getElementById('modal-debrief').classList.remove('open');
+        document.getElementById('modal-gameover').classList.remove('open');
+        document.getElementById('modal-shop').classList.remove('open');
+
+        // Reset state
+        this.state = 'PLAYING';
+        this.levelTime = 0;
+        this.stats = { takedowns: 0, alarmsRaised: 0, kills: 0 };
+        this.alarmLevel = 'NORMAL';
+        this.alarmTimer = 0;
+        this.blackoutTimer = 0;
+        this.audio.stopSiren();
+
+        // Setup Player
+        const hasSpeed = this.saveManager.hasUpgrade('speed_legs');
+        const hasExtraAmmo = this.saveManager.hasUpgrade('ammo_pouch');
+        this.player = {
+          x: config.playerStart.x,
+          y: config.playerStart.y,
+          radius: 14,
+          speed: hasSpeed ? 3.6 : 2.8,
+          sprintSpeed: hasSpeed ? 6.2 : 5.0,
+          angle: 0,
+          health: 100,
+          maxHealth: 100,
+          isHuggingWall: false,
+          isDraggingBody: false,
+          draggedGuard: null,
+          isCloaked: false,
+          cloakDuration: this.saveManager.hasUpgrade('cloak_battery') ? 9.0 : 5.0,
+          cloakTimer: 0,
+          cloakCooldown: 0,
+          selectedGadget: 0,
+          gadgets: [
+            { id: 'dart', count: hasExtraAmmo ? 4 : 2 },
+            { id: 'noise', count: 2 },
+            { id: 'smoke', count: 2 },
+            { id: 'cloak', ready: true }
+          ],
+          downloadProgress: 0,
+          isDownloading: false,
+          downloadComplete: false
+        };
+
+        // Deep copy level objects
+        this.walls = JSON.parse(JSON.stringify(config.walls));
+        this.doors = JSON.parse(JSON.stringify(config.doors));
+        this.vents = JSON.parse(JSON.stringify(config.vents));
+        this.shadows = JSON.parse(JSON.stringify(config.shadows));
+        this.exitZone = JSON.parse(JSON.stringify(config.exitZone));
+        this.exitZone.active = false;
+
+        this.mainframe = { ...config.mainframe, downloaded: false, hacking: false };
+        this.breaker = config.breaker ? { ...config.breaker, overloaded: false, cooldown: 0 } : null;
+        this.terminal = config.terminal ? { ...config.terminal, hacked: false } : null;
+
+        // Setup AI Guards
+        this.guards = config.guards.map((g, idx) => ({
+          id: idx,
+          x: g.x,
+          y: g.y,
+          radius: 15,
+          waypoints: g.waypoints,
+          currentWp: 0,
+          angle: 0,
+          speed: g.type === 'elite' ? 1.9 : 1.4,
+          chaseSpeed: g.type === 'elite' ? 4.2 : 3.4,
+          fov: g.fov,
+          range: g.range,
+          type: g.type,
+          state: 'PATROL', // PATROL, SUSPICIOUS, CHASE, STUNNED
+          alertMeter: 0,
+          investigateTarget: null,
+          stunTimer: 0,
+          isDead: false
+        }));
+
+        // Setup Cameras
+        this.cameras = config.cameras.map((c, idx) => ({
+          id: idx,
+          x: c.x,
+          y: c.y,
+          baseAngle: c.baseAngle,
+          sweepRange: c.sweepRange,
+          sweepSpeed: c.sweepSpeed,
+          angle: c.baseAngle,
+          fov: c.fov,
+          range: c.range,
+          disabledTimer: 0
+        }));
+
+        // Setup Drones
+        this.drones = config.drones.map((d, idx) => ({
+          id: idx,
+          x: d.x,
+          y: d.y,
+          waypoints: d.waypoints,
+          currentWp: 0,
+          angle: 0,
+          range: d.range,
+          speed: 2.2,
+          state: 'PATROL',
+          alertMeter: 0,
+          investigateTarget: null
+        }));
+
+        this.projectiles = [];
+        this.smokeClouds = [];
+        this.noiseWaves = [];
+        this.particles = [];
+
+        // Camera init
+        this.camera.x = this.player.x - this.width / 2;
+        this.camera.y = this.player.y - this.height / 2;
+
+        // Update HUD
+        document.getElementById('floor-name').innerText = config.title;
+        document.getElementById('mission-objective').innerText = "OBJ: Access Mainframe & Extract";
+        this.showComm("ORACLE // TAC-COM", config.briefing, 5000);
+        this.updateGadgetUI();
+        this.updateHUDStats();
+      }
+
+      showComm(sender, text, duration = 4000) {
+        const box = document.getElementById('comm-box');
+        document.querySelector('.comm-sender').innerText = sender;
+        document.getElementById('comm-text').innerText = text;
+        box.classList.add('active');
+        if (this.commTimeout) clearTimeout(this.commTimeout);
+        this.commTimeout = setTimeout(() => {
+          box.classList.remove('active');
+        }, duration);
+      }
+
+      /* ========================================================================
+         MAIN LOOP & UPDATES
+         ======================================================================== */
+      loop(timestamp) {
+        const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
+        this.lastTime = timestamp;
+
+        if (this.state === 'PLAYING') {
+          this.update(dt);
+        }
+
+        this.render();
+        requestAnimationFrame((t) => this.loop(t));
+      }
+
+      update(dt) {
+        this.levelTime += dt;
+        const config = LEVEL_CONFIGS[this.currentFloor - 1];
+
+        // 1. Player Input & Movement
+        this.updatePlayer(dt, config);
+
+        // 2. Camera Follow Smoothly (Lerp)
+        const targetCamX = this.player.x - this.width / 2;
+        const targetCamY = this.player.y - this.height / 2;
+        this.camera.x += (targetCamX - this.camera.x) * 0.1;
+        this.camera.y += (targetCamY - this.camera.y) * 0.1;
+
+        // Calculate Mouse in World Space
+        this.mouse.worldX = this.mouse.x + this.camera.x;
+        this.mouse.worldY = this.mouse.y + this.camera.y;
+        this.player.angle = Math.atan2(this.mouse.worldY - this.player.y, this.mouse.worldX - this.player.x);
+
+        // 3. Blackout & Alarm Timers
+        if (this.blackoutTimer > 0) {
+          this.blackoutTimer -= dt;
+          if (this.blackoutTimer <= 0) {
+            this.showComm("ORACLE // TAC-COM", "Facility power grid restored! Watch your corners.", 3500);
+          }
+        }
+
+        if (this.alarmLevel === 'ALARM') {
+          this.alarmTimer += dt;
+          let anyGuardChasing = this.guards.some(g => g.state === 'CHASE' && !g.isDead);
+          let anyDroneChasing = this.drones.some(d => d.state === 'CHASE');
+          if (!anyGuardChasing && !anyDroneChasing && this.alarmTimer > 20) {
+            this.alarmLevel = 'SUSPICIOUS';
+            this.audio.stopSiren();
+            this.showComm("ORACLE // TAC-COM", "Security lost visual. Alert downgraded to Suspicious.", 3000);
+          }
+        } else if (this.alarmLevel === 'SUSPICIOUS') {
+          let anyAlert = this.guards.some(g => g.state === 'SUSPICIOUS' && !g.isDead);
+          if (!anyAlert) {
+            this.alarmLevel = 'NORMAL';
+          }
+        }
+
+        // Update Alarm HUD Badge
+        const badge = document.getElementById('alert-badge');
+        badge.className = `alert-badge ${this.alarmLevel.toLowerCase()}`;
+        badge.innerText = this.alarmLevel === 'ALARM' ? 'RED ALERT // COMBAT' : (this.alarmLevel === 'SUSPICIOUS' ? 'SUSPICIOUS // INVESTIGATING' : 'ALL CLEAR');
+
+        // 4. Update Projectiles, Gadgets, Waves, Particles
+        this.updateProjectiles(dt);
+        this.updateSmoke(dt);
+        this.updateNoiseWaves(dt);
+        this.updateParticles(dt);
+
+        // 5. Update AI Entities (Guards, Cameras, Drones)
+        this.updateGuards(dt);
+        this.updateCameras(dt);
+        this.updateDrones(dt);
+
+        // 6. Environment Interactions (Breaker, Terminal, Mainframe, Extraction)
+        this.updateInteractions(dt);
+
+        // 7. Check Game Over
+        if (this.player.health <= 0) {
+          this.triggerGameOver();
+        }
+      }
+
+      /* ========================================================================
+         PLAYER LOGIC
+         ======================================================================== */
+      updatePlayer(dt, config) {
+        const p = this.player;
+
+        // Check if inside Vent
+        p.inVent = this.vents.some(v => 
+          p.x >= v.x && p.x <= v.x + v.w && p.y >= v.y && p.y <= v.y + v.h
+        );
+
+        // Check if inside Shadow
+        p.inShadow = this.shadows.some(s => 
+          p.x >= s.x && p.x <= s.x + s.w && p.y >= s.y && p.y <= s.y + s.h
+        );
+
+        // Wall hugging (Space)
+        p.isHuggingWall = this.keys['Space'] && !p.isDraggingBody;
+
+        // Cloak Battery
+        if (p.isCloaked) {
+          p.cloakTimer -= dt;
+          if (p.cloakTimer <= 0) {
+            p.isCloaked = false;
+            p.cloakCooldown = 20.0;
+          }
+        } else if (p.cloakCooldown > 0) {
+          p.cloakCooldown -= dt;
+        }
+
+        // Update Cloak HUD Bar
+        const cloakPercent = p.isCloaked 
+          ? (p.cloakTimer / p.cloakDuration) * 100 
+          : (p.cloakCooldown > 0 ? (1 - p.cloakCooldown / 20.0) * 100 : 100);
+        document.getElementById('bar-cloak').style.width = `${Math.max(0, Math.min(100, cloakPercent))}%`;
+        document.getElementById('bar-health').style.width = `${p.health}%`;
+
+        // Movement Vector
+        let moveX = 0;
+        let moveY = 0;
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) moveY -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) moveY += 1;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+
+        const isMoving = moveX !== 0 || moveY !== 0;
+        const isSprinting = this.keys['ShiftLeft'] || this.keys['ShiftRight'];
+
+        if (isMoving) {
+          const len = Math.hypot(moveX, moveY);
+          moveX /= len;
+          moveY /= len;
+
+          let speed = isSprinting ? p.sprintSpeed : p.speed;
+          if (p.isDraggingBody) speed *= 0.55;
+          if (p.isHuggingWall) speed *= 0.65;
+
+          const nextX = p.x + moveX * speed;
+          const nextY = p.y + moveY * speed;
+
+          // Wall and Closed Door Collisions
+          if (!this.checkCollision(nextX, p.y, p.radius)) {
+            p.x = nextX;
+          }
+          if (!this.checkCollision(p.x, nextY, p.radius)) {
+            p.y = nextY;
+          }
+
+          // Boundary clamp
+          p.x = Math.max(p.radius + 40, Math.min(config.mapW - p.radius - 40, p.x));
+          p.y = Math.max(p.radius + 40, Math.min(config.mapH - p.radius - 40, p.y));
+
+          // Dragged body follows player
+          if (p.isDraggingBody && p.draggedGuard) {
+            p.draggedGuard.x = p.x - moveX * 28;
+            p.draggedGuard.y = p.y - moveY * 28;
+          }
+
+          // Sprint Noise Emission
+          if (isSprinting && !p.isDraggingBody) {
+            if (!this.noiseCooldown || this.noiseCooldown <= 0) {
+              const hasSilentSoles = this.saveManager.hasUpgrade('silent_soles');
+              const noiseRadius = hasSilentSoles ? 65 : 145;
+              this.createNoiseWave(p.x, p.y, noiseRadius);
+              this.audio.playFootstep();
+              this.noiseCooldown = 0.35;
+            }
+          }
+        }
+
+        if (this.noiseCooldown > 0) {
+          this.noiseCooldown -= dt;
+        }
+      }
+
+      checkCollision(x, y, radius) {
+        // Walls
+        for (const w of this.walls) {
+          if (circleRectCollision(x, y, radius, w.x, w.y, w.w, w.h)) return true;
+        }
+        // Closed doors
+        for (const d of this.doors) {
+          if (!d.open && circleRectCollision(x, y, radius, d.x, d.y, d.w, d.h)) return true;
+        }
+        return false;
+      }
+
+      /* ========================================================================
+         AI GUARDS & SENSORS
+         ======================================================================== */
+      updateGuards(dt) {
+        const p = this.player;
+        const blackout = this.blackoutTimer > 0;
+
+        this.guards.forEach(g => {
+          if (g.isDead) return;
+
+          // Stunned State
+          if (g.state === 'STUNNED') {
+            g.stunTimer -= dt;
+            if (g.stunTimer <= 0) {
+              g.state = 'SUSPICIOUS';
+              g.investigateTarget = { x: g.x, y: g.y };
+            }
+            return;
+          }
+
+          // Vision check on Player
+          const dToPlayer = dist(g.x, g.y, p.x, p.y);
+          let effectiveRange = g.range * (blackout ? 0.45 : 1.0);
+          if (p.inShadow) effectiveRange *= 0.4;
+          if (p.isHuggingWall) effectiveRange *= 0.7;
+
+          let canSeePlayer = false;
+          if (!p.isCloaked && !p.inVent && dToPlayer <= effectiveRange) {
+            // Check inside vision cone
+            const angleToPlayer = Math.atan2(p.y - g.y, p.x - g.x);
+            let diffAngle = Math.abs(this.normalizeAngle(angleToPlayer - g.angle));
+
+            if (diffAngle <= (g.fov * Math.PI / 180) / 2) {
+              // Raycast Line of Sight
+              if (this.hasLineOfSight(g.x, g.y, p.x, p.y)) {
+                // Check if obscured by smoke
+                if (!this.isInSmoke(p.x, p.y) && !this.isInSmoke(g.x, g.y)) {
+                  canSeePlayer = true;
+                }
+              }
+            }
+          }
+
+          // Vision Check on Stunned/Dead Allies
+          this.guards.forEach(other => {
+            if (other !== g && (other.state === 'STUNNED' || other.isDead)) {
+              const dToBody = dist(g.x, g.y, other.x, other.y);
+              if (dToBody < effectiveRange) {
+                const angleToBody = Math.atan2(other.y - g.y, other.x - g.x);
+                let diff = Math.abs(this.normalizeAngle(angleToBody - g.angle));
+                if (diff <= (g.fov * Math.PI / 180) / 2 && this.hasLineOfSight(g.x, g.y, other.x, other.y)) {
+                  this.triggerAlarm("Guards discovered incapacitated operative!");
+                  g.state = 'CHASE';
+                }
+              }
+            }
+          });
+
+          // State Machine
+          if (canSeePlayer) {
+            this.audio.playHeartbeat();
+            g.alertMeter += dt * (dToPlayer < 90 ? 3.5 : 1.8);
+            if (g.alertMeter >= 1.0) {
+              g.state = 'CHASE';
+              g.investigateTarget = { x: p.x, y: p.y };
+              this.triggerAlarm("Target visually confirmed by patrol!");
+            } else if (g.state === 'PATROL') {
+              g.state = 'SUSPICIOUS';
+              g.investigateTarget = { x: p.x, y: p.y };
+            }
+          } else {
+            g.alertMeter = Math.max(0, g.alertMeter - dt * 0.8);
+          }
+
+          // Guard Action per State
+          if (g.state === 'CHASE') {
+            g.investigateTarget = { x: p.x, y: p.y };
+            const angle = Math.atan2(p.y - g.y, p.x - g.x);
+            g.angle = angle;
+            const nextX = g.x + Math.cos(angle) * g.chaseSpeed;
+            const nextY = g.y + Math.sin(angle) * g.chaseSpeed;
+            if (!this.checkCollision(nextX, nextY, g.radius)) {
+              g.x = nextX;
+              g.y = nextY;
+            }
+
+            // Attack / Subdue Player
+            if (dToPlayer < g.radius + p.radius + 8) {
+              p.health -= dt * 45;
+              this.audio.playSpark();
+            }
+          } else if (g.state === 'SUSPICIOUS') {
+            if (g.investigateTarget) {
+              const d = dist(g.x, g.y, g.investigateTarget.x, g.investigateTarget.y);
+              if (d > 20) {
+                const angle = Math.atan2(g.investigateTarget.y - g.y, g.investigateTarget.x - g.x);
+                g.angle = angle;
+                g.x += Math.cos(angle) * (g.speed * 1.2);
+                g.y += Math.sin(angle) * (g.speed * 1.2);
+              } else {
+                g.angle += dt * 2.0; // Look around
+                if (!g.lookTimer) g.lookTimer = 4.0;
+                g.lookTimer -= dt;
+                if (g.lookTimer <= 0) {
+                  g.state = 'PATROL';
+                  g.lookTimer = null;
+                  g.investigateTarget = null;
+                }
+              }
+            }
+          } else if (g.state === 'PATROL' && g.waypoints.length > 0) {
+            const wp = g.waypoints[g.currentWp];
+            const d = dist(g.x, g.y, wp.x, wp.y);
+            if (d < 15) {
+              g.currentWp = (g.currentWp + 1) % g.waypoints.length;
+            } else {
+              const angle = Math.atan2(wp.y - g.y, wp.x - g.x);
+              g.angle = angle;
+              g.x += Math.cos(angle) * g.speed;
+              g.y += Math.sin(angle) * g.speed;
+            }
+          }
+        });
+      }
+
+      updateCameras(dt) {
+        const p = this.player;
+        const blackout = this.blackoutTimer > 0;
+
+        this.cameras.forEach(cam => {
+          if (blackout || cam.disabledTimer > 0) {
+            if (cam.disabledTimer > 0) cam.disabledTimer -= dt;
+            return;
+          }
+
+          // Sweep rotation
+          cam.angle = cam.baseAngle + Math.sin(this.levelTime * cam.sweepSpeed) * cam.sweepRange;
+
+          // Check Player detection
+          const d = dist(cam.x, cam.y, p.x, p.y);
+          if (!p.isCloaked && !p.inVent && d < cam.range) {
+            const angleToP = Math.atan2(p.y - cam.y, p.x - cam.x) * 180 / Math.PI;
+            let diff = Math.abs(this.normalizeAngleDegrees(angleToP - cam.angle));
+
+            if (diff <= cam.fov / 2) {
+              if (this.hasLineOfSight(cam.x, cam.y, p.x, p.y) && !this.isInSmoke(p.x, p.y)) {
+                this.triggerAlarm("Security Camera flagged unauthorized intruder!");
+              }
+            }
+          }
+        });
+      }
+
+      updateDrones(dt) {
+        const p = this.player;
+        this.drones.forEach(d => {
+          // Drone patrol
+          if (d.state === 'PATROL' && d.waypoints.length > 0) {
+            const wp = d.waypoints[d.currentWp];
+            const distToWp = dist(d.x, d.y, wp.x, wp.y);
+            if (distToWp < 15) {
+              d.currentWp = (d.currentWp + 1) % d.waypoints.length;
+            } else {
+              const angle = Math.atan2(wp.y - d.y, wp.x - d.x);
+              d.angle = angle;
+              d.x += Math.cos(angle) * d.speed;
+              d.y += Math.sin(angle) * d.speed;
+            }
+          } else if (d.state === 'CHASE') {
+            const angle = Math.atan2(p.y - d.y, p.x - d.x);
+            d.angle = angle;
+            d.x += Math.cos(angle) * (d.speed * 1.8);
+            d.y += Math.sin(angle) * (d.speed * 1.8);
+
+            if (dist(d.x, d.y, p.x, p.y) < 30) {
+              p.health -= dt * 60;
+              this.audio.playSpark();
+            }
+          }
+
+          // Drone 360 sensor
+          const dToPlayer = dist(d.x, d.y, p.x, p.y);
+          if (!p.isCloaked && !p.inVent && dToPlayer < d.range && this.hasLineOfSight(d.x, d.y, p.x, p.y)) {
+            if (!this.isInSmoke(p.x, p.y)) {
+              d.state = 'CHASE';
+              this.triggerAlarm("Combat Drone engaged intruder!");
+            }
+          }
+        });
+      }
+
+      /* ========================================================================
+         INTERACTIONS & ENVIRONMENT
+         ======================================================================== */
+      updateInteractions(dt) {
+        const p = this.player;
+        const promptElem = document.getElementById('prompt-action');
+        const promptKey = document.getElementById('prompt-key');
+        const promptDesc = document.getElementById('prompt-desc');
+        let promptFound = false;
+
+        // Check Takedown on nearby Guard
+        if (!p.isDraggingBody) {
+          for (const g of this.guards) {
+            if (!g.isDead && g.state !== 'STUNNED') {
+              const d = dist(p.x, p.y, g.x, g.y);
+              if (d < 45) {
+                // Check if behind guard
+                const angleToGuard = Math.atan2(g.y - p.y, g.x - p.x);
+                let diffAngle = Math.abs(this.normalizeAngle(g.angle - angleToGuard));
+                if (diffAngle < 1.2) { // In back arc
+                  promptKey.innerText = "E";
+                  promptDesc.innerText = "SILENT CHOKE TAKEDOWN";
+                  promptFound = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // Check Drag Body
+        if (!promptFound) {
+          for (const g of this.guards) {
+            if (g.state === 'STUNNED' || g.isDead) {
+              if (dist(p.x, p.y, g.x, g.y) < 40) {
+                promptKey.innerText = "G";
+                promptDesc.innerText = p.isDraggingBody ? "DROP BODY" : "DRAG & CONCEAL BODY";
+                promptFound = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // Check Door Interaction
+        if (!promptFound) {
+          for (const door of this.doors) {
+            if (dist(p.x, p.y, door.x + door.w / 2, door.y + door.h / 2) < 55) {
+              promptKey.innerText = "E";
+              promptDesc.innerText = door.open ? "CLOSE DOOR" : (door.locked ? "DOOR LOCKED (TERMINAL REQ.)" : "OPEN DOOR");
+              promptFound = true;
+              if (this.keys['KeyE'] && !door.locked && !this.doorDebounce) {
+                door.open = !door.open;
+                this.audio.playFootstep();
+                this.doorDebounce = true;
+                setTimeout(() => this.doorDebounce = false, 300);
+              }
+              break;
+            }
+          }
+        }
+
+        // Check Breaker
+        if (!promptFound && this.breaker && !this.breaker.overloaded) {
+          if (dist(p.x, p.y, this.breaker.x, this.breaker.y) < 50) {
+            promptKey.innerText = "H";
+            promptDesc.innerText = "OVERLOAD BREAKER (BLACKOUT)";
+            promptFound = true;
+            if (this.keys['KeyH']) {
+              this.breaker.overloaded = true;
+              this.blackoutTimer = 25.0;
+              this.audio.playSpark();
+              this.createSparks(this.breaker.x, this.breaker.y, 25);
+              this.showComm("ORACLE // TAC-COM", "Grid overloaded! 25 seconds blackout initiated.", 3500);
+            }
+          }
+        }
+
+        // Check Terminal
+        if (!promptFound && this.terminal && !this.terminal.hacked) {
+          if (dist(p.x, p.y, this.terminal.x, this.terminal.y) < 50) {
+            promptKey.innerText = "H";
+            promptDesc.innerText = "HACK SECURITY GRID (LOOP CAMERAS & UNLOCK DOORS)";
+            promptFound = true;
+            if (this.keys['KeyH']) {
+              this.terminal.hacked = true;
+              this.audio.playHackSuccess();
+              this.cameras.forEach(c => c.disabledTimer = 18.0);
+              this.doors.forEach(d => d.locked = false);
+              this.showComm("ORACLE // TAC-COM", "Firewalls breached! Cameras looping and security doors unlocked.", 4000);
+            }
+          }
+        }
+
+        // Check Mainframe (Target Download)
+        if (!promptFound && this.mainframe && !this.mainframe.downloaded) {
+          if (dist(p.x, p.y, this.mainframe.x, this.mainframe.y) < 60) {
+            promptKey.innerText = "H";
+            const reqTime = this.saveManager.hasUpgrade('neural_clock') ? 3.0 : 5.0;
+            const pct = Math.floor((p.downloadProgress / reqTime) * 100);
+            promptDesc.innerText = `DOWNLOAD MAINFRAME DATA (${pct}%)`;
+            promptFound = true;
+
+            if (this.keys['KeyH']) {
+              p.isDownloading = true;
+              p.downloadProgress += dt;
+              if (Math.random() < 0.2) this.audio.playHackTick();
+
+              if (p.downloadProgress >= reqTime) {
+                this.mainframe.downloaded = true;
+                p.downloadComplete = true;
+                this.exitZone.active = true;
+                this.audio.playHackSuccess();
+                this.showComm("ORACLE // TAC-COM", "MAIN ENCRYPTION CORE ACQUIRED! EXTRACTION LZ IS ACTIVE!", 6000);
+                document.getElementById('mission-objective').innerText = "OBJ: GET TO THE EXTRACTION ZONE!";
+              }
+            } else {
+              p.isDownloading = false;
+            }
+          }
+        }
+
+        // Check Extraction Zone
+        if (this.exitZone && this.exitZone.active) {
+          if (p.x >= this.exitZone.x && p.x <= this.exitZone.x + this.exitZone.w &&
+              p.y >= this.exitZone.y && p.y <= this.exitZone.y + this.exitZone.h) {
+            this.triggerExtractionSuccess();
+          }
+        }
+
+        promptElem.style.display = promptFound ? 'flex' : 'none';
+      }
+
+      /* ========================================================================
+         GADGETS & ACTIONS
+         ======================================================================== */
+      selectGadget(idx) {
+        this.player.selectedGadget = idx;
+        document.querySelectorAll('.gadget-slot').forEach((slot, i) => {
+          slot.classList.toggle('active', i === idx);
+        });
+      }
+
+      updateGadgetUI() {
+        const p = this.player;
+        document.getElementById('gadget-count-0').innerText = p.gadgets[0].count;
+        document.getElementById('gadget-count-1').innerText = p.gadgets[1].count;
+        document.getElementById('gadget-count-2').innerText = p.gadgets[2].count;
+        document.getElementById('gadget-count-3').innerText = p.isCloaked ? 'ACTIVE' : (p.cloakCooldown > 0 ? `${Math.ceil(p.cloakCooldown)}s` : 'READY');
+      }
+
+      triggerGadget() {
+        const p = this.player;
+        const g = p.gadgets[p.selectedGadget];
+
+        if (p.selectedGadget === 0) { // Tranq Dart
+          if (g.count > 0) {
+            g.count--;
+            this.audio.playDart();
+            const angle = p.angle;
+            this.projectiles.push({
+              x: p.x + Math.cos(angle) * 16,
+              y: p.y + Math.sin(angle) * 16,
+              vx: Math.cos(angle) * 16,
+              vy: Math.sin(angle) * 16,
+              range: 550,
+              traveled: 0
+            });
+            this.updateGadgetUI();
+          }
+        } else if (p.selectedGadget === 1) { // Noisemaker Decoy
+          if (g.count > 0) {
+            g.count--;
+            this.audio.playDecoy();
+            this.createNoiseWave(this.mouse.worldX, this.mouse.worldY, 260);
+            this.createSparks(this.mouse.worldX, this.mouse.worldY, 15);
+            // Alert nearby guards to investigate
+            this.guards.forEach(guard => {
+              if (dist(guard.x, guard.y, this.mouse.worldX, this.mouse.worldY) < 320 && !guard.isDead) {
+                guard.state = 'SUSPICIOUS';
+                guard.investigateTarget = { x: this.mouse.worldX, y: this.mouse.worldY };
+              }
+            });
+            this.updateGadgetUI();
+          }
+        } else if (p.selectedGadget === 2) { // Smoke Bomb
+          if (g.count > 0) {
+            g.count--;
+            this.audio.playSmoke();
+            this.createSmokeCloud(this.mouse.worldX, this.mouse.worldY);
+            this.updateGadgetUI();
+          }
+        } else if (p.selectedGadget === 3) { // Optic Cloak
+          if (!p.isCloaked && p.cloakCooldown <= 0) {
+            p.isCloaked = true;
+            p.cloakTimer = p.cloakDuration;
+            this.audio.playCloak();
+            this.updateGadgetUI();
+          }
+        }
+      }
+
+      handleTakedown() {
+        const p = this.player;
+        for (const g of this.guards) {
+          if (!g.isDead && g.state !== 'STUNNED' && dist(p.x, p.y, g.x, g.y) < 48) {
+            g.state = 'STUNNED';
+            g.stunTimer = 999999; // Knocked out for mission
+            this.audio.playTakedown();
+            this.stats.takedowns++;
+            this.createSparks(g.x, g.y, 8);
+            break;
+          }
+        }
+      }
+
+      handleDragBody() {
+        const p = this.player;
+        if (p.isDraggingBody) {
+          p.isDraggingBody = false;
+          p.draggedGuard = null;
+        } else {
+          for (const g of this.guards) {
+            if ((g.state === 'STUNNED' || g.isDead) && dist(p.x, p.y, g.x, g.y) < 45) {
+              p.isDraggingBody = true;
+              p.draggedGuard = g;
+              break;
+            }
+          }
+        }
+      }
+
+      /* ========================================================================
+         VFX & PHYSICS ENTITIES
+         ======================================================================== */
+      createNoiseWave(x, y, maxRadius) {
+        this.noiseWaves.push({ x, y, radius: 10, maxRadius, alpha: 1.0 });
+      }
+
+      updateNoiseWaves(dt) {
+        for (let i = this.noiseWaves.length - 1; i >= 0; i--) {
+          const w = this.noiseWaves[i];
+          w.radius += dt * 380;
+          w.alpha = 1 - (w.radius / w.maxRadius);
+          if (w.radius >= w.maxRadius) {
+            this.noiseWaves.splice(i, 1);
+          }
+        }
+      }
+
+      createSmokeCloud(x, y) {
+        this.smokeClouds.push({ x, y, radius: 95, life: 11.0, maxLife: 11.0 });
+      }
+
+      updateSmoke(dt) {
+        for (let i = this.smokeClouds.length - 1; i >= 0; i--) {
+          const s = this.smokeClouds[i];
+          s.life -= dt;
+          if (s.life <= 0) this.smokeClouds.splice(i, 1);
+        }
+      }
+
+      isInSmoke(x, y) {
+        return this.smokeClouds.some(s => dist(x, y, s.x, s.y) < s.radius);
+      }
+
+      createSparks(x, y, count = 10) {
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 1 + Math.random() * 4;
+          this.particles.push({
+            x, y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            life: 0.3 + Math.random() * 0.4,
+            color: '#00f3ff'
+          });
+        }
+      }
+
+      updateParticles(dt) {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const p = this.particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= dt;
+          if (p.life <= 0) this.particles.splice(i, 1);
+        }
+      }
+
+      updateProjectiles(dt) {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const pr = this.projectiles[i];
+          pr.x += pr.vx;
+          pr.y += pr.vy;
+          pr.traveled += Math.hypot(pr.vx, pr.vy);
+
+          // Hit wall or door
+          if (this.checkCollision(pr.x, pr.y, 4) || pr.traveled >= pr.range) {
+            this.createSparks(pr.x, pr.y, 4);
+            this.projectiles.splice(i, 1);
+            continue;
+          }
+
+          // Hit guard
+          let hit = false;
+          for (const g of this.guards) {
+            if (!g.isDead && g.state !== 'STUNNED' && dist(pr.x, pr.y, g.x, g.y) < g.radius + 6) {
+              g.state = 'STUNNED';
+              g.stunTimer = 999999;
+              this.stats.takedowns++;
+              this.audio.playTakedown();
+              this.createSparks(g.x, g.y, 10);
+              hit = true;
+              break;
+            }
+          }
+          if (hit) {
+            this.projectiles.splice(i, 1);
+          }
+        }
+      }
+
+      /* ========================================================================
+         ALARM & MISSION RESULTS
+         ======================================================================== */
+      triggerAlarm(reason) {
+        if (this.alarmLevel !== 'ALARM') {
+          this.alarmLevel = 'ALARM';
+          this.alarmTimer = 0;
+          this.stats.alarmsRaised++;
+          this.audio.startSiren();
+          this.showComm("FACILITY SECURITY", `INTRUDER ALERT! ${reason}`, 4500);
+
+          // Alert all guards
+          this.guards.forEach(g => {
+            if (!g.isDead && g.state !== 'STUNNED') {
+              g.state = 'CHASE';
+            }
+          });
+
+          // Scramble emergency combat drone
+          this.spawnAlarmDrone();
+        }
+      }
+
+      spawnAlarmDrone() {
+        if (this.currentFloor >= 3 && this.drones.length < 5) {
+          const spawnX = this.mainframe ? this.mainframe.x : this.width / 2;
+          const spawnY = this.mainframe ? Math.max(80, this.mainframe.y - 200) : 100;
+          this.drones.push({
+            id: Date.now(),
+            x: spawnX,
+            y: spawnY,
+            waypoints: [{ x: spawnX, y: spawnY }],
+            currentWp: 0,
+            angle: 0,
+            range: 220,
+            speed: 2.6,
+            state: 'CHASE',
+            alertMeter: 1.0,
+            investigateTarget: { x: this.player.x, y: this.player.y }
+          });
+          this.createSparks(spawnX, spawnY, 20);
+          this.showComm("ORACLE // TAC-COM", "CRITICAL WARNING: Combat Drone scrambled to eliminate you!", 4500);
+        }
+      }
+
+      triggerExtractionSuccess() {
+        this.state = 'DEBRIEF';
+        this.audio.stopSiren();
+        this.audio.playHackSuccess();
+
+        // Calculate Rank & Bounty
+        const baseBounty = 500;
+        const ghostBonus = this.stats.kills === 0 ? 400 : 0;
+        const shadowBonus = this.stats.alarmsRaised === 0 ? 500 : 0;
+        const totalCredits = baseBounty + ghostBonus + shadowBonus;
+
+        let rank = 'C';
+        if (this.stats.alarmsRaised === 0 && this.stats.kills === 0) rank = 'S';
+        else if (this.stats.alarmsRaised <= 1) rank = 'A';
+        else if (this.stats.alarmsRaised <= 3) rank = 'B';
+
+        // Save
+        this.saveManager.completeFloor(this.currentFloor, totalCredits, rank);
+
+        // Populate Modal
+        document.getElementById('debrief-floor-name').innerText = `FLOOR 0${this.currentFloor} CLEARED`;
+        const rankEl = document.getElementById('debrief-rank');
+        rankEl.className = `rank-display rank-${rank}`;
+        rankEl.innerText = `RANK ${rank}`;
+
+        document.getElementById('stat-base-bounty').innerText = `+${baseBounty} CR`;
+        document.getElementById('stat-ghost-bonus').innerText = `+${ghostBonus} CR`;
+        document.getElementById('stat-shadow-bonus').innerText = `+${shadowBonus} CR`;
+        document.getElementById('stat-takedowns').innerText = this.stats.takedowns;
+        const mins = Math.floor(this.levelTime / 60);
+        const secs = Math.floor(this.levelTime % 60);
+        document.getElementById('stat-time').innerText = `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+        document.getElementById('stat-total-credits').innerText = `+${totalCredits.toLocaleString()} CR`;
+
+        document.getElementById('modal-debrief').classList.add('open');
+      }
+
+      nextLevel() {
+        if (this.currentFloor < 10) {
+          this.startLevel(this.currentFloor + 1);
+        } else {
+          this.triggerCampaignVictory();
+        }
+      }
+
+      triggerCampaignVictory() {
+        this.state = 'VICTORY';
+        this.audio.stopSiren();
+        this.audio.playHackSuccess();
+        document.getElementById('modal-debrief').classList.remove('open');
+
+        let sRanks = 0;
+        for (let i = 1; i <= 10; i++) {
+          if (this.saveManager.data.ranks[i] === 'S') sRanks++;
+        }
+        document.getElementById('victory-stats').innerHTML = `
+          Total Corporate Credits: <strong>${this.saveManager.data.credits.toLocaleString()} CR</strong><br>
+          Perfect 'Ghost S-Rank' Sectors: <strong>${sRanks} / 10</strong>
+        `;
+        document.getElementById('modal-victory').classList.add('open');
+      }
+
+      triggerGameOver() {
+        this.state = 'GAMEOVER';
+        this.audio.stopSiren();
+        document.getElementById('modal-gameover').classList.add('open');
+      }
+
+      /* ========================================================================
+         RAYCASTING & LINE OF SIGHT
+         ======================================================================== */
+      hasLineOfSight(x1, y1, x2, y2) {
+        const p1 = { x: x1, y: y1 };
+        const p2 = { x: x2, y: y2 };
+
+        // Test all walls
+        for (const w of this.walls) {
+          const lines = [
+            [{ x: w.x, y: w.y }, { x: w.x + w.w, y: w.y }],
+            [{ x: w.x + w.w, y: w.y }, { x: w.x + w.w, y: w.y + w.h }],
+            [{ x: w.x + w.w, y: w.y + w.h }, { x: w.x, y: w.y + w.h }],
+            [{ x: w.x, y: w.y + w.h }, { x: w.x, y: w.y }]
+          ];
+          for (const [p3, p4] of lines) {
+            if (lineIntersection(p1, p2, p3, p4)) return false;
+          }
+        }
+
+        // Test closed doors
+        for (const d of this.doors) {
+          if (!d.open) {
+            const lines = [
+              [{ x: d.x, y: d.y }, { x: d.x + d.w, y: d.y }],
+              [{ x: d.x + d.w, y: d.y }, { x: d.x + d.w, y: d.y + d.h }],
+              [{ x: d.x + d.w, y: d.y + d.h }, { x: d.x, y: d.y + d.h }],
+              [{ x: d.x, y: d.y + d.h }, { x: d.x, y: d.y }]
+            ];
+            for (const [p3, p4] of lines) {
+              if (lineIntersection(p1, p2, p3, p4)) return false;
+            }
+          }
+        }
+
+        return true;
+      }
+
+      castRay(originX, originY, angle, maxDist) {
+        const targetX = originX + Math.cos(angle) * maxDist;
+        const targetY = originY + Math.sin(angle) * maxDist;
+        const p1 = { x: originX, y: originY };
+        const p2 = { x: targetX, y: targetY };
+
+        let closestHit = { x: targetX, y: targetY, dist: 1.0 };
+
+        const testLines = [];
+        this.walls.forEach(w => {
+          testLines.push([{ x: w.x, y: w.y }, { x: w.x + w.w, y: w.y }]);
+          testLines.push([{ x: w.x + w.w, y: w.y }, { x: w.x + w.w, y: w.y + w.h }]);
+          testLines.push([{ x: w.x + w.w, y: w.y + w.h }, { x: w.x, y: w.y + w.h }]);
+          testLines.push([{ x: w.x, y: w.y + w.h }, { x: w.x, y: w.y }]);
+        });
+
+        this.doors.forEach(d => {
+          if (!d.open) {
+            testLines.push([{ x: d.x, y: d.y }, { x: d.x + d.w, y: d.y }]);
+            testLines.push([{ x: d.x + d.w, y: d.y }, { x: d.x + d.w, y: d.y + d.h }]);
+            testLines.push([{ x: d.x + d.w, y: d.y + d.h }, { x: d.x, y: d.y + d.h }]);
+            testLines.push([{ x: d.x, y: d.y + d.h }, { x: d.x, y: d.y }]);
+          }
+        });
+
+        for (const [p3, p4] of testLines) {
+          const hit = lineIntersection(p1, p2, p3, p4);
+          if (hit && hit.dist < closestHit.dist) {
+            closestHit = hit;
+          }
+        }
+
+        return closestHit;
+      }
+
+      normalizeAngle(a) {
+        while (a < -Math.PI) a += Math.PI * 2;
+        while (a > Math.PI) a -= Math.PI * 2;
+        return a;
+      }
+
+      normalizeAngleDegrees(a) {
+        while (a < -180) a += 360;
+        while (a > 180) a -= 360;
+        return a;
+      }
+
+      /* ========================================================================
+         CANVAS 2D RENDERING
+         ======================================================================== */
+      render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        ctx.save();
+        // Camera translation
+        ctx.translate(-Math.floor(this.camera.x), -Math.floor(this.camera.y));
+
+        // 1. Grid Background & Floor
+        this.renderFloorGrid(ctx);
+
+        // 2. Shadows & Hiding Spots
+        this.renderShadows(ctx);
+
+        // 3. Vents
+        this.renderVents(ctx);
+
+        // 4. Interactive Terminals, Breakers & Extraction
+        this.renderInteractives(ctx);
+
+        // 5. Noise Waves
+        this.renderNoiseWaves(ctx);
+
+        // 6. Smoke Clouds
+        this.renderSmokeClouds(ctx);
+
+        // 7. Raycasted Vision Cones (Guards, Cameras, Drones)
+        this.renderVisionCones(ctx);
+
+        // 8. Walls & Doors
+        this.renderWalls(ctx);
+        this.renderDoors(ctx);
+
+        // 9. Stunned / Dragged Bodies
+        this.renderBodies(ctx);
+
+        // 10. AI Units (Guards, Drones, Cameras)
+        this.renderEnemies(ctx);
+
+        // 11. Projectiles & Sparks
+        this.renderProjectiles(ctx);
+
+        // 11.5 Download Stream & Progress
+        this.renderDownloadStream(ctx);
+
+        // 12. Operative Player
+        this.renderPlayer(ctx);
+
+        // 12.5 Aim Laser Sight
+        this.renderAimLaser(ctx);
+
+        ctx.restore();
+
+        // 13. Radar / Minimap Overlay
+        this.renderMinimap(ctx);
+      }
+
+      renderFloorGrid(ctx) {
+        const config = LEVEL_CONFIGS[this.currentFloor - 1];
+        ctx.fillStyle = '#080d14';
+        ctx.fillRect(0, 0, config.mapW, config.mapH);
+
+        // Subtle tech grid lines
+        ctx.strokeStyle = 'rgba(0, 243, 255, 0.035)';
+        ctx.lineWidth = 1;
+        const gridSize = 40;
+        for (let x = 0; x < config.mapW; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, config.mapH);
+          ctx.stroke();
+        }
+        for (let y = 0; y < config.mapH; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(config.mapW, y);
+          ctx.stroke();
+        }
+      }
+
+      renderShadows(ctx) {
+        ctx.fillStyle = 'rgba(2, 4, 8, 0.82)';
+        this.shadows.forEach(s => {
+          ctx.fillRect(s.x, s.y, s.w, s.h);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+          ctx.strokeRect(s.x, s.y, s.w, s.h);
+        });
+      }
+
+      renderVents(ctx) {
+        this.vents.forEach(v => {
+          ctx.fillStyle = '#0f1c29';
+          ctx.fillRect(v.x, v.y, v.w, v.h);
+          ctx.strokeStyle = '#00f3ff';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(v.x, v.y, v.w, v.h);
+
+          // Vent grate lines
+          ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+          const step = 8;
+          for (let i = step; i < Math.max(v.w, v.h); i += step) {
+            ctx.beginPath();
+            if (v.w > v.h) {
+              ctx.moveTo(v.x + i, v.y);
+              ctx.lineTo(v.x + i, v.y + v.h);
+            } else {
+              ctx.moveTo(v.x, v.y + i);
+              ctx.lineTo(v.x + v.w, v.y + i);
+            }
+            ctx.stroke();
+          }
+        });
+      }
+
+      renderInteractives(ctx) {
+        // Breaker
+        if (this.breaker) {
+          ctx.fillStyle = this.breaker.overloaded ? '#334155' : '#ffaa00';
+          ctx.fillRect(this.breaker.x - 14, this.breaker.y - 14, 28, 28);
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(this.breaker.x - 14, this.breaker.y - 14, 28, 28);
+          ctx.fillStyle = '#000';
+          ctx.font = '14px monospace';
+          ctx.fillText('⚡', this.breaker.x - 7, this.breaker.y + 5);
+        }
+
+        // Terminal
+        if (this.terminal) {
+          ctx.fillStyle = this.terminal.hacked ? '#00ff66' : '#00f3ff';
+          ctx.fillRect(this.terminal.x - 16, this.terminal.y - 16, 32, 32);
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(this.terminal.x - 16, this.terminal.y - 16, 32, 32);
+          ctx.fillStyle = '#000';
+          ctx.font = '14px monospace';
+          ctx.fillText('💻', this.terminal.x - 8, this.terminal.y + 5);
+        }
+
+        // Mainframe
+        if (this.mainframe) {
+          ctx.fillStyle = this.mainframe.downloaded ? '#00ff66' : (this.player.isDownloading ? '#bc13fe' : '#ff2a55');
+          ctx.fillRect(this.mainframe.x - 22, this.mainframe.y - 22, 44, 44);
+          ctx.strokeStyle = '#00f3ff';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(this.mainframe.x - 22, this.mainframe.y - 22, 44, 44);
+
+          // Pulsing halo
+          ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+          ctx.beginPath();
+          ctx.arc(this.mainframe.x, this.mainframe.y, 32 + Math.sin(this.levelTime * 4) * 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = '#fff';
+          ctx.font = '18px monospace';
+          ctx.fillText('💾', this.mainframe.x - 10, this.mainframe.y + 6);
+        }
+
+        // Extraction Zone
+        if (this.exitZone) {
+          const ez = this.exitZone;
+          ctx.fillStyle = ez.active ? 'rgba(0, 255, 102, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+          ctx.fillRect(ez.x, ez.y, ez.w, ez.h);
+          ctx.strokeStyle = ez.active ? '#00ff66' : '#64748b';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(ez.x, ez.y, ez.w, ez.h);
+
+          ctx.fillStyle = ez.active ? '#00ff66' : '#64748b';
+          ctx.font = 'bold 12px monospace';
+          ctx.fillText(ez.active ? 'LZ: EXTRACT' : 'LZ: LOCKED', ez.x + 8, ez.y + ez.h / 2 + 4);
+        }
+      }
+
+      renderNoiseWaves(ctx) {
+        this.noiseWaves.forEach(w => {
+          ctx.strokeStyle = `rgba(0, 243, 255, ${w.alpha * 0.7})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+      }
+
+      renderSmokeClouds(ctx) {
+        this.smokeClouds.forEach(s => {
+          ctx.fillStyle = `rgba(80, 100, 120, ${Math.min(0.75, s.life / 2)})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      renderVisionCones(ctx) {
+        const blackout = this.blackoutTimer > 0;
+
+        // Guards
+        this.guards.forEach(g => {
+          if (g.isDead || g.state === 'STUNNED') return;
+
+          let color = 'rgba(0, 255, 102, 0.16)';
+          if (g.state === 'SUSPICIOUS') color = 'rgba(255, 170, 0, 0.25)';
+          if (g.state === 'CHASE') color = 'rgba(255, 42, 85, 0.35)';
+
+          const effectiveRange = g.range * (blackout ? 0.45 : 1.0);
+          this.drawVisionCone(ctx, g.x, g.y, g.angle, g.fov, effectiveRange, color);
+        });
+
+        // Cameras
+        this.cameras.forEach(cam => {
+          if (blackout || cam.disabledTimer > 0) return;
+          const color = 'rgba(0, 243, 255, 0.18)';
+          this.drawVisionCone(ctx, cam.x, cam.y, cam.angle * Math.PI / 180, cam.fov, cam.range, color);
+        });
+
+        // Drones
+        this.drones.forEach(d => {
+          const color = d.state === 'CHASE' ? 'rgba(255, 42, 85, 0.35)' : 'rgba(0, 243, 255, 0.18)';
+          this.drawVisionCone(ctx, d.x, d.y, d.angle, 70, d.range, color);
+        });
+      }
+
+      drawVisionCone(ctx, ox, oy, angle, fovDeg, maxRange, fillColor) {
+        const fovRad = fovDeg * Math.PI / 180;
+        const startAngle = angle - fovRad / 2;
+        const rayCount = 42;
+        const step = fovRad / rayCount;
+
+        ctx.fillStyle = fillColor;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+
+        for (let i = 0; i <= rayCount; i++) {
+          const currentAngle = startAngle + step * i;
+          const hit = this.castRay(ox, oy, currentAngle, maxRange);
+          ctx.lineTo(hit.x, hit.y);
+        }
+
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      renderWalls(ctx) {
+        ctx.fillStyle = '#142030';
+        ctx.strokeStyle = '#00f3ff';
+        ctx.lineWidth = 1.5;
+
+        this.walls.forEach(w => {
+          ctx.fillRect(w.x, w.y, w.w, w.h);
+          ctx.strokeRect(w.x, w.y, w.w, w.h);
+        });
+      }
+
+      renderDoors(ctx) {
+        this.doors.forEach(d => {
+          if (d.open) {
+            ctx.strokeStyle = 'rgba(0, 255, 102, 0.6)';
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(d.x, d.y, d.w, d.h);
+            ctx.setLineDash([]);
+          } else {
+            ctx.fillStyle = d.locked ? '#ff2a55' : '#00f3ff';
+            ctx.fillRect(d.x, d.y, d.w, d.h);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(d.x, d.y, d.w, d.h);
+          }
+        });
+      }
+
+      renderBodies(ctx) {
+        this.guards.forEach(g => {
+          if (g.isDead || g.state === 'STUNNED') {
+            ctx.save();
+            ctx.translate(g.x, g.y);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(-12, -7, 24, 14);
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '10px monospace';
+            ctx.fillText('Zzz', -8, -12);
+            ctx.restore();
+          }
+        });
+      }
+
+      renderEnemies(ctx) {
+        const hasThermal = this.saveManager.hasUpgrade('thermal_vision');
+
+        // Guards
+        this.guards.forEach(g => {
+          if (g.isDead || g.state === 'STUNNED') return;
+
+          ctx.save();
+          ctx.translate(g.x, g.y);
+          ctx.rotate(g.angle);
+
+          // Guard body
+          ctx.fillStyle = g.type === 'elite' ? '#ff2a55' : '#1e3a8a';
+          ctx.beginPath();
+          ctx.arc(0, 0, g.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#00f3ff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Gun direction indicator
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(4, -3, 14, 6);
+
+          ctx.restore();
+
+          // Alert bar over guard
+          if (g.alertMeter > 0) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(g.x - 16, g.y - 28, 32, 6);
+            ctx.fillStyle = g.alertMeter >= 1.0 ? '#ff2a55' : '#ffaa00';
+            ctx.fillRect(g.x - 16, g.y - 28, 32 * Math.min(1, g.alertMeter), 6);
+          }
+        });
+
+        // Cameras
+        this.cameras.forEach(cam => {
+          ctx.save();
+          ctx.translate(cam.x, cam.y);
+          ctx.rotate(cam.angle * Math.PI / 180);
+
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-10, -8, 20, 16);
+          ctx.fillStyle = cam.disabledTimer > 0 ? '#475569' : '#00f3ff';
+          ctx.beginPath();
+          ctx.arc(8, 0, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        });
+
+        // Drones
+        this.drones.forEach(d => {
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          ctx.rotate(d.angle);
+
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(0, 0, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#00f3ff';
+          ctx.stroke();
+
+          // Rotors
+          ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)';
+          ctx.beginPath();
+          ctx.arc(0, 0, 18, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+        });
+      }
+
+      renderProjectiles(ctx) {
+        // Darts
+        this.projectiles.forEach(pr => {
+          ctx.strokeStyle = '#00ff66';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(pr.x, pr.y);
+          ctx.lineTo(pr.x - pr.vx * 1.5, pr.y - pr.vy * 1.5);
+          ctx.stroke();
+        });
+
+        // Particles
+        this.particles.forEach(pt => {
+          ctx.fillStyle = pt.color;
+          ctx.fillRect(pt.x, pt.y, 2, 2);
+        });
+      }
+
+      renderPlayer(ctx) {
+        const p = this.player;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+
+        // Cloak transparency or normal
+        ctx.globalAlpha = p.isCloaked ? 0.3 : 1.0;
+
+        // Player Circle
+        ctx.fillStyle = p.isCloaked ? '#bc13fe' : '#00f3ff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Hands / weapon aiming forward
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(4, -4, 12, 8);
+
+        ctx.restore();
+
+        // Wall hug outline
+        if (p.isHuggingWall) {
+          ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      renderDownloadStream(ctx) {
+        const p = this.player;
+        if (!p.isDownloading || !this.mainframe) return;
+
+        ctx.save();
+        // Pulsing data beam
+        ctx.strokeStyle = '#bc13fe';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([6, 6]);
+        ctx.lineDashOffset = -this.levelTime * 30;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(this.mainframe.x, this.mainframe.y);
+        ctx.stroke();
+
+        // Download circular meter above player
+        const reqTime = this.saveManager.hasUpgrade('neural_clock') ? 3.0 : 5.0;
+        const progress = Math.min(1.0, p.downloadProgress / reqTime);
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#00f3ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - 28, 12, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      renderAimLaser(ctx) {
+        const p = this.player;
+        if (p.selectedGadget !== 0 || p.gadgets[0].count <= 0) return;
+
+        const maxRange = 550;
+        const hit = this.castRay(p.x, p.y, p.angle, maxRange);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 255, 102, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(p.x + Math.cos(p.angle) * 16, p.y + Math.sin(p.angle) * 16);
+        ctx.lineTo(hit.x, hit.y);
+        ctx.stroke();
+
+        // Laser dot at impact
+        ctx.fillStyle = '#00ff66';
+        ctx.beginPath();
+        ctx.arc(hit.x, hit.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      renderMinimap(ctx) {
+        const mmW = 180;
+        const mmH = 130;
+        const mmX = this.width - mmW - 20;
+        const mmY = 85;
+        const config = LEVEL_CONFIGS[this.currentFloor - 1];
+        const scaleX = mmW / config.mapW;
+        const scaleY = mmH / config.mapH;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(6, 12, 20, 0.85)';
+        ctx.fillRect(mmX, mmY, mmW, mmH);
+        ctx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(mmX, mmY, mmW, mmH);
+
+        // Minimap Walls
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        this.walls.forEach(w => {
+          ctx.fillRect(mmX + w.x * scaleX, mmY + w.y * scaleY, Math.max(1, w.w * scaleX), Math.max(1, w.h * scaleY));
+        });
+
+        // Minimap Mainframe
+        if (this.mainframe) {
+          ctx.fillStyle = '#ff2a55';
+          ctx.fillRect(mmX + this.mainframe.x * scaleX - 2, mmY + this.mainframe.y * scaleY - 2, 4, 4);
+        }
+
+        // Minimap Extraction
+        if (this.exitZone && this.exitZone.active) {
+          ctx.fillStyle = '#00ff66';
+          ctx.fillRect(mmX + this.exitZone.x * scaleX, mmY + this.exitZone.y * scaleY, 6, 6);
+        }
+
+        // Minimap Guards (If Thermal Vision installed)
+        if (this.saveManager.hasUpgrade('thermal_vision')) {
+          ctx.fillStyle = '#ffaa00';
+          this.guards.forEach(g => {
+            if (!g.isDead && g.state !== 'STUNNED') {
+              ctx.fillRect(mmX + g.x * scaleX - 1.5, mmY + g.y * scaleY - 1.5, 3, 3);
+            }
+          });
+        }
+
+        // Minimap Player
+        ctx.fillStyle = '#00f3ff';
+        ctx.beginPath();
+        ctx.arc(mmX + this.player.x * scaleX, mmY + this.player.y * scaleY, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // Launch on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      window.game = new GameEngine();
+    });
+  </script>
+</body>
+</html>
