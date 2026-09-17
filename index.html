@@ -736,9 +736,14 @@
     <!-- Modal: Cyberware Upgrade Shop -->
     <div id="modal-shop" class="modal-overlay">
       <div class="modal-box">
-        <div class="modal-header">
-          <div id="shop-modal-title" class="modal-title">암시장 사이버웨어 클리닉</div>
-          <div id="shop-credits-display" style="color: var(--neon-amber); font-weight: bold;">보유 크레딧: 0 CR</div>
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div id="shop-modal-title" class="modal-title">암시장 사이버웨어 클리닉</div>
+            <div id="shop-modal-sub-label" style="font-size: 11px; color: var(--neon-cyan);">신경 및 신체 임플란트 개조</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="shop-credits-display" style="color: var(--neon-amber); font-weight: bold; font-size: 14px;">보유 크레딧: 0 CR</div>
+          </div>
         </div>
         <div class="modal-body">
           <p id="shop-modal-sub" style="font-size: 12px; color: #94a3b8;">탈취한 기업 바운티 크레딧으로 신경 및 생체 기계 임플란트를 장착하십시오.</p>
@@ -746,8 +751,9 @@
             <!-- Dynamically populated -->
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="btn-close-shop" class="btn">확인 및 닫기</button>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button id="btn-close-shop" class="btn btn-secondary">정산 화면으로 복귀 [ESC]</button>
+          <button id="btn-shop-next-mission" class="btn" style="display: none;">다음 층으로 진입 [ENTER]</button>
         </div>
       </div>
     </div>
@@ -907,6 +913,10 @@
         resetConfirm: "모든 침투 기록과 크레딧을 초기화하시겠습니까?",
         shopTitle: "암시장 사이버웨어 클리닉",
         shopSub: "탈취한 기업 바운티 크레딧으로 신경 및 생체 기계 임플란트를 장착하십시오.",
+        shopSubLabel: "신경 및 신체 임플란트 개조",
+        shopReturnDebrief: "정산 화면으로 복귀 [ESC]",
+        shopReturnTitle: "타이틀로 복귀 [ESC]",
+        shopNextMission: "다음 층으로 진입 [ENTER]",
         shopInstall: "장착하기",
         shopInstalled: "장착 완료",
         shopOnline: "가동 중",
@@ -996,6 +1006,10 @@
         resetConfirm: "Reset all operational progress and credits?",
         shopTitle: "BLACK-MARKET CYBERWARE CLINIC",
         shopSub: "Acquire tactical neural and bio-mechanical augmentations using extracted corporate bounty credits.",
+        shopSubLabel: "NEURAL & CYBERNETIC AUGMENTATIONS",
+        shopReturnDebrief: "Back to Debrief [ESC]",
+        shopReturnTitle: "Back to Title [ESC]",
+        shopNextMission: "ASCEND TO NEXT FLOOR [ENTER]",
         shopInstall: "INSTALL",
         shopInstalled: "INSTALLED",
         shopOnline: "ONLINE",
@@ -1973,7 +1987,16 @@
         // Shop Modal
         document.getElementById('shop-modal-title').innerText = t('shopTitle');
         document.getElementById('shop-modal-sub').innerText = t('shopSub');
-        document.getElementById('btn-close-shop').innerText = t('shopClose');
+        const shopSubLabel = document.getElementById('shop-modal-sub-label');
+        if (shopSubLabel) shopSubLabel.innerText = t('shopSubLabel');
+        const closeShopBtn = document.getElementById('btn-close-shop');
+        if (closeShopBtn) {
+          closeShopBtn.innerText = (this.shopSource === 'DEBRIEF' || this.state === 'DEBRIEF')
+            ? t('shopReturnDebrief')
+            : t('shopReturnTitle');
+        }
+        const nextShopBtn = document.getElementById('btn-shop-next-mission');
+        if (nextShopBtn) nextShopBtn.innerText = t('shopNextMission');
 
         // Debrief Modal
         document.getElementById('debrief-modal-title').innerText = t('debriefTitle');
@@ -2047,9 +2070,22 @@
           if (e.code === 'Digit3') this.selectGadget(2);
           if (e.code === 'Digit4') this.selectGadget(3);
           if (e.code === 'KeyQ') this.triggerGadget();
-          if (e.code === 'Escape') this.togglePause();
+          if (e.code === 'Escape') {
+            const shopModal = document.getElementById('modal-shop');
+            if (shopModal && shopModal.classList.contains('open')) {
+              this.closeShop();
+            } else {
+              this.togglePause();
+            }
+          }
           if (e.code === 'Enter') {
-            if (this.state === 'TITLE') this.startLevel(this.currentFloor);
+            const shopModal = document.getElementById('modal-shop');
+            if (shopModal && shopModal.classList.contains('open')) {
+              if (this.shopSource === 'DEBRIEF' || this.state === 'DEBRIEF') {
+                this.closeShop();
+                this.nextLevel();
+              }
+            } else if (this.state === 'TITLE') this.startLevel(this.currentFloor);
             else if (this.state === 'DEBRIEF') this.nextLevel();
             else if (this.state === 'GAMEOVER') this.startLevel(this.currentFloor);
             else if (this.state === 'VICTORY') this.exitToTitle();
@@ -2129,12 +2165,19 @@
           }
         });
 
-        document.getElementById('btn-open-shop').addEventListener('click', () => this.openShop());
+        document.getElementById('btn-open-shop').addEventListener('click', () => this.openShop('TITLE'));
         document.getElementById('btn-close-shop').addEventListener('click', () => this.closeShop());
         document.getElementById('btn-debrief-shop').addEventListener('click', () => {
           document.getElementById('modal-debrief').classList.remove('open');
-          this.openShop();
+          this.openShop('DEBRIEF');
         });
+        const shopNextBtn = document.getElementById('btn-shop-next-mission');
+        if (shopNextBtn) {
+          shopNextBtn.addEventListener('click', () => {
+            this.closeShop();
+            this.nextLevel();
+          });
+        }
 
         document.getElementById('btn-next-mission').addEventListener('click', () => this.nextLevel());
         document.getElementById('btn-retry-mission').addEventListener('click', () => this.startLevel(this.currentFloor));
@@ -2159,9 +2202,29 @@
         });
       }
 
-      openShop() {
+      openShop(source = null) {
+        if (source) {
+          this.shopSource = source;
+        } else if (!this.shopSource) {
+          this.shopSource = (this.state === 'DEBRIEF') ? 'DEBRIEF' : (this.state === 'PAUSED' ? 'PAUSED' : 'TITLE');
+        }
+
         const modal = document.getElementById('modal-shop');
         document.getElementById('shop-credits-display').innerText = `${this.t('creditsLabel')} ${this.saveManager.data.credits} CR`;
+
+        const closeBtn = document.getElementById('btn-close-shop');
+        const nextBtn = document.getElementById('btn-shop-next-mission');
+        if (this.shopSource === 'DEBRIEF' || this.state === 'DEBRIEF') {
+          if (closeBtn) closeBtn.innerText = this.t('shopReturnDebrief');
+          if (nextBtn) {
+            nextBtn.style.display = 'inline-block';
+            nextBtn.innerText = this.t('shopNextMission');
+          }
+        } else {
+          if (closeBtn) closeBtn.innerText = this.t('shopReturnTitle');
+          if (nextBtn) nextBtn.style.display = 'none';
+        }
+
         const list = document.getElementById('shop-upgrade-list');
         list.innerHTML = '';
 
@@ -2201,7 +2264,7 @@
             card.querySelector('button').addEventListener('click', () => {
               if (this.saveManager.buyUpgrade(u.id)) {
                 this.audio.playHackSuccess();
-                this.openShop();
+                this.openShop(this.shopSource);
                 this.updateHUDStats();
               } else {
                 alert(this.t('shopNotEnough'));
@@ -2217,6 +2280,20 @@
 
       closeShop() {
         document.getElementById('modal-shop').classList.remove('open');
+        const source = this.shopSource || (this.state === 'DEBRIEF' ? 'DEBRIEF' : (this.state === 'PAUSED' ? 'PAUSED' : 'TITLE'));
+        this.shopSource = null;
+
+        if (source === 'DEBRIEF' || this.state === 'DEBRIEF') {
+          this.state = 'DEBRIEF';
+          document.getElementById('modal-debrief').classList.add('open');
+        } else if (source === 'PAUSED' || this.state === 'PAUSED') {
+          this.state = 'PAUSED';
+          document.getElementById('modal-pause').classList.add('open');
+        } else {
+          this.state = 'TITLE';
+          document.getElementById('modal-title').classList.add('open');
+          this.renderTitleLevels();
+        }
       }
 
       renderTitleLevels() {
@@ -3138,7 +3215,9 @@
       }
 
       triggerExtractionSuccess() {
+        if (this.state === 'DEBRIEF') return;
         this.state = 'DEBRIEF';
+        if (this.exitZone) this.exitZone.active = false;
         this.audio.stopSiren();
         this.audio.playHackSuccess();
 
